@@ -1,14 +1,25 @@
 import random
 import time
+import webbrowser
 
 random.seed(time.time())
 
 series = [
    'Star Trek The Original Series',
+   'Star Trek The Animated Series',
    'Star Trek The Next Generation',
    'Star Trek Deep Space Nine',
    'Star Trek Voyager',
-   'Star Trek Enterprise'
+   'Star Trek Enterprise',
+   'Star Trek Discovery',
+   'Star Trek Picard',
+   'Star Trek Lower Decks'
+]
+
+movieSeries = [
+   'Star Trek The Original Series',
+   'Star Trek The Next Generation',
+   'Star Trek Reboot Movies',
 ]
 
 TOSepisode = [
@@ -748,6 +759,76 @@ TASepisode = [
   'S2E22 The Counter-Clock Incident'
 ]
 
+DISEpisode = [
+  'S1E1 The Vulcan Hello',
+  'S1E2 Battle at the Binary Stars',
+  'S1E3 Context is for Kings',
+  'S1E4 The Butchers Knife Cares Not for the Lambs Cry',
+  'S1E5 Choose Your Pain',
+  'S1E6 Lethe',
+  'S1E7 Magic to Make the Sanest Man Go Mad',
+  'S1E8 Si Vis Pacem, Para Bellum',
+  'S1E9 Into the Forest I Go',
+  'S1E10 Despite Yourself',
+  'S1E11 The Wolf Inside',
+  'S1E12 Vaulting Ambition',
+  'S1E13 Whats Past Is Prologue',
+  'S1E14 The War Without, The War Within',
+  'S1E15 Will You Take My Hand?',
+  'S2E1 Brother',
+  'S2E2 New Eden', 
+  'S2E3 Point of Light',
+  'S2E4 An Obol for Charon',
+  'S2E5 Saints of Imperfection',
+  'S2E6 The Sound of Thunder',
+  'S2E7 Light and Shadows',
+  'S2E8 If Memory Serves',
+  'S2E9 Project Daedalus',
+  'S2E10 The Red Angel',
+  'S2E11 Perpetual Infinity',
+  'S2E12 Through the Valley of Shadows',
+  'S2E13 Such Sweet Sorrow',
+  'S3E1 That Hope Is You, Part 1',
+  'S3E2 Far from Home',
+  'S3E3 People of Earth',
+  'S3E4 Forget Me Not',
+  'S3E5 Die Trying',
+  'S3E6 Scavengers',
+  'S3E7 Unification III',
+  'S3E8 The Sanctuary',
+  'S3E9 Terra Firma Part 1',
+  'S3E10 Terra Firma Part 2',
+  'S3E11 SuKal',
+  'S3E12 There Is a Tide...',
+  'S3E13 That Hope Is You, Part 2'
+]
+
+PICEpisode = [
+  'S1E1 Remembrance',
+  'S1E2 Maps and Legends',
+  'S1E3 The End Is the Beginning',
+  'S1E4 Absolute Candor',
+  'S1E5 Stardust City Rag',
+  'S1E6 The Impossible Box',
+  'S1E7 Nepenthe',
+  'S1E8 Broken Pieces',
+  'S1E9 Et in Arcadia Ego, Part 1',
+  'S1E10 Et in Arcadia Ego, Part 2'
+]
+
+LDEpisode = [
+  'S1E1 Second Contact',
+  'S1E2 Envoys',
+  'S1E3 Temporal Edict',
+  'S1E4 Moist Vessel',
+  'S1E5 Cupids Errant Arrow',
+  'S1E6 Terminal Provocations',
+  'S1E7 Much Ado About Boimler',
+  'S1E8 Veritas',
+  'S1E9 Crisis Point',
+  'S1E10 No Small Parts'
+]
+
 TNGMovies = [
   'Star Trek Generations',
   'Star Trek First Contact',
@@ -765,17 +846,28 @@ TOSMovies = [
   'Star Trek Generations',
 ]
 
+RebootMovies = [
+  'Star Trek (2009)',
+  'Star Trek Into Darkness',
+  'Star Trek Beyond'
+]
+
 TVMapping = {
     0 : TOSepisode,
-    1 : TNGepisode,
-    2 : DS9episode,
-    3 : VOYepisode,
-    4 : ENTepisode
+    1 : TASepisode,
+    2 : TNGepisode,
+    3 : DS9episode,
+    4 : VOYepisode,
+    5 : ENTepisode,
+    6 : DISEpisode,
+    7 : PICEpisode,
+    8 : LDEpisode
 }
 
 MovieMapping = {
     0 : TOSMovies,
     1 : TNGMovies,
+    2 : RebootMovies
 }
 
 repick = ''
@@ -785,7 +877,7 @@ while(len(str(repick)) == 0 or repick == 1):
     
     typeMedia = ''
     while(len(typeMedia) == 0):
-        typeMedia = input('\n(1) TV\n(2) Movies\n\nWhat kind of Media? : ')
+        typeMedia = input('\n( 1 ) TV\n( 2 ) Movies\n\nWhat kind of Media? : ')
 
     typeMedia = int(typeMedia)
     show = ''
@@ -797,7 +889,7 @@ while(len(str(repick)) == 0 or repick == 1):
               print('(',count,') ',showtype)
               count+=1
         else:
-          for showtype in series[1:3]:
+          for showtype in movieSeries:
               print('(',count,') ',showtype)
               count+=1
 
@@ -805,16 +897,23 @@ while(len(str(repick)) == 0 or repick == 1):
 
     show = int(show)
     repeat = ''
-    while(len(str(repeat)) == 0 or repeat == 1):
-        if(typeMedia == 1):
-            targetArr = TVMapping.get(show)
-            print('\n',targetArr[random.randint(0,len(targetArr))])
-        else:
-            targetArr = MovieMapping.get(show)
-            print('\n',(targetArr[random.randint(0,len(targetArr))]))
-
-        repeat = input('\n(1) Yes\n(2) No\n\nRepeat? : ')
+    while(len(str(repeat)) == 0 or repeat == 1 or repeat == 3):
+        result = ''
+        if(repeat != 3):
+          if(typeMedia == 1):
+              targetArr = TVMapping.get(show)
+              result = targetArr[random.randint(0,len(targetArr)-1)]
+              print('\n',result)
+          else:
+              targetArr = MovieMapping.get(show)
+              result = targetArr[random.randint(0,len(targetArr)-1)]
+              print('\n',result)
+  
+        repeat = input('\n( 1 ) Yes\n( 2 ) No\n( 3 ) Open in Browser\n\nRepeat? : ')
         repeat = int(repeat)
+
+        if(repeat == 3):
+          webbrowser.open_new_tab('https://www.google.com/search?q='+result.replace(' ','+'))
     
-    repick = input('\n(1) Yes\n(2) No\n\nRandomly pick another kind of Star Trek Media? : ')
+    repick = input('\n( 1 ) Yes\n( 2 ) No\n\nRandomly pick another kind of Star Trek Media? : ')
     repick = int(repick)
