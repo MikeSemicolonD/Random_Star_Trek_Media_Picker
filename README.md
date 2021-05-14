@@ -9,7 +9,7 @@
  (No GUI, command line only)
  <br>
  </br>
- Just simply pick a Media Type then pick a Series!
+ Simply choose a <b>Media Type</b> then choose a <b>Series</b> or just choose <b>I'm Feeling Lucky</b> to get anything!
  <br>
  </br>
 
