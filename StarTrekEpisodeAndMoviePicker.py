@@ -878,10 +878,15 @@ while(len(str(repick)) == 0 or repick == 1):
     
     typeMedia = ''
     while(len(typeMedia) == 0):
-        typeMedia = input('\n( 1 ) TV\n( 2 ) Movies\n\nWhat kind of Media? : ')
+        typeMedia = input('\n( 1 ) TV\n( 2 ) Movies\n( 3 ) I\'m Feeling Lucky\n\nWhat kind of Media? : ')
 
     typeMedia = int(typeMedia)
+
     show = ''
+
+    if(typeMedia == 3):
+      show = '-1'
+
     while(len(show) == 0):
         count = 0
         print('')
@@ -904,6 +909,11 @@ while(len(str(repick)) == 0 or repick == 1):
           if(typeMedia == 1):
               targetArr = TVMapping.get(show)
               result = targetArr[random.randint(0,len(targetArr)-1)]
+              print('\n',result)
+          elif(typeMedia == 3):
+              targetMapping = TVMapping if random.randint(0,1) == 0 else MovieMapping
+              targetShow = targetMapping[random.randint(0,len(targetMapping)-1)]
+              result = targetShow[random.randint(0,len(targetShow)-1)]
               print('\n',result)
           else:
               targetArr = MovieMapping.get(show)
