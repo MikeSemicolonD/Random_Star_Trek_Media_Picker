@@ -1,4 +1,4 @@
-# Random Star Trek Media Picker
+# Random Star Trek Media Picker (Written in Python3)
 
 <div align="center">
  Too much Star Trek too little time? Don't know what Movie/Episode to pick? Then this is the program for you! 
