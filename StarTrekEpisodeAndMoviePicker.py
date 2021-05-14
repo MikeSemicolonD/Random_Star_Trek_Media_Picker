@@ -910,11 +910,13 @@ while(len(str(repick)) == 0 or repick == 1):
               result = targetArr[random.randint(0,len(targetArr)-1)]
               print('\n',result)
   
-        repeat = input('\n( 1 ) Yes\n( 2 ) No\n( 3 ) Open in Browser\n\nRepeat? : ')
+        repeat = input('\n( 1 ) Yes\n( 2 ) No\n( 3 ) Open in Browser\n( 4 ) Open in Browser and Close\n\nRepeat? : ')
         repeat = int(repeat)
 
-        if(repeat == 3):
+        if(repeat == 3 or repeat == 4):
           webbrowser.open_new_tab('https://www.google.com/search?q='+result.replace(' ','+'))
+          if(repeat == 4):
+            exit()
     
     repick = input('\n( 1 ) Yes\n( 2 ) No\n\nRandomly pick another kind of Star Trek Media? : ')
     repick = int(repick)
