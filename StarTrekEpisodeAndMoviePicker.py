@@ -870,17 +870,18 @@ MovieMapping = {
     2 : RebootMovies
 }
 
-repick = ''
-
-while(len(str(repick)) == 0 or repick == 1):
+while(True):
     print("\n\t               .\n\t              .:.\n\t             .:::.\n\t            .:::::.\n\t        ***.:::::::.***\n\t   *******.:::::::::.*******\n\t ********.:::::::::::.********\n\t********.:::::::::::::.********\n\t*******.::::::\'***`::::.*******\n\t******.::::\'*********`::.******\n\t ****.:::\'*************`:.****\n\t   *.::\'*****************`.*\n\t   .:\'  ***************    .\n\t  .\n\t\n\t")
     print('\n\tRandom Star Trek Media Picker')
     
     typeMedia = ''
     while(len(typeMedia) == 0):
-        typeMedia = input('\n( 1 ) TV\n( 2 ) Movies\n( 3 ) I\'m Feeling Lucky\n\nWhat kind of Media? : ')
+        typeMedia = input('\n( 1 ) TV\n( 2 ) Movies\n( 3 ) I\'m Feeling Lucky\n( 4 ) Quit\n\nWhat kind of Media? : ')
 
     typeMedia = int(typeMedia)
+    
+    if(typeMedia == 4):
+      exit()
 
     show = ''
 
@@ -909,16 +910,21 @@ while(len(str(repick)) == 0 or repick == 1):
           if(typeMedia == 1):
               targetArr = TVMapping.get(show)
               result = targetArr[random.randint(0,len(targetArr)-1)]
-              print('\n',result)
+              print('\n  ',series[show])
+              print('\n\t',result)
           elif(typeMedia == 3):
-              targetMapping = TVMapping if random.randint(0,1) == 0 else MovieMapping
-              targetShow = targetMapping[random.randint(0,len(targetMapping)-1)]
+              mappingIndex = random.randint(0,1)
+              targetMapping = TVMapping if mappingIndex == 0 else MovieMapping
+              selectedMapping = random.randint(0,len(targetMapping)-1)
+              targetShow = targetMapping[selectedMapping]
               result = targetShow[random.randint(0,len(targetShow)-1)]
-              print('\n',result)
+              print('\n  ',(series if mappingIndex == 0 else movieSeries)[selectedMapping])
+              print('\n\t',result)
           else:
               targetArr = MovieMapping.get(show)
               result = targetArr[random.randint(0,len(targetArr)-1)]
-              print('\n',result)
+              print('\n  ',movieSeries[show])
+              print('\n\t',result)
   
         repeat = input('\n( 1 ) Yes\n( 2 ) No\n( 3 ) Open in Browser\n( 4 ) Open in Browser and Close\n\nRepeat? : ')
         repeat = int(repeat)
@@ -927,6 +933,3 @@ while(len(str(repick)) == 0 or repick == 1):
           webbrowser.open_new_tab('https://www.google.com/search?q='+result.replace(' ','+'))
           if(repeat == 4):
             exit()
-    
-    repick = input('\n( 1 ) Yes\n( 2 ) No\n\nRandomly pick another kind of Star Trek Media? : ')
-    repick = int(repick)
