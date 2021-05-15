@@ -17,8 +17,8 @@ series = [
 ]
 
 movieSeries = [
-   'Star Trek The Original Series',
-   'Star Trek The Next Generation',
+   'Star Trek The Original Series Movies',
+   'Star Trek The Next Generation Movies',
    'Star Trek Reboot Movies',
 ]
 
