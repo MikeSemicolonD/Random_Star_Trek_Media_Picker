@@ -4,24 +4,6 @@ import webbrowser
 
 random.seed(time.time())
 
-series = [
-   'Star Trek The Original Series',
-   'Star Trek The Animated Series',
-   'Star Trek The Next Generation',
-   'Star Trek Deep Space Nine',
-   'Star Trek Voyager',
-   'Star Trek Enterprise',
-   'Star Trek Discovery',
-   'Star Trek Picard',
-   'Star Trek Lower Decks'
-]
-
-movieSeries = [
-   'Star Trek The Original Series Movies',
-   'Star Trek The Next Generation Movies',
-   'Star Trek Reboot Movies',
-]
-
 TOSepisode = [
    'S1E01 The Man Trap',
    'S1E02 Charlie X',
@@ -759,7 +741,7 @@ TASepisode = [
   'S2E22 The Counter-Clock Incident'
 ]
 
-DISEpisode = [
+DISepisode = [
   'S1E1 The Vulcan Hello',
   'S1E2 Battle at the Binary Stars',
   'S1E3 Context is for Kings',
@@ -803,7 +785,20 @@ DISEpisode = [
   'S3E13 That Hope Is You, Part 2'
 ]
 
-PICEpisode = [
+STepisode = [
+  'S1E1 Runaway',
+  'S1E2 Calypso',
+  'S1E3 The Brightest Star',
+  'S1E4 The Escape Artist',
+  'S2E1 Q&A',
+  'S2E2 The Trouble with Edward',
+  'S2E3 Ask Not',
+  'S2E4 Ephraim and Dot',
+  'S2E5 The Girl Who Made the Stars',
+  'S2E6 Children of Mars'
+]
+
+PICepisode = [
   'S1E1 Remembrance',
   'S1E2 Maps and Legends',
   'S1E3 The End Is the Beginning',
@@ -816,7 +811,7 @@ PICEpisode = [
   'S1E10 Et in Arcadia Ego, Part 2'
 ]
 
-LDEpisode = [
+LDepisode = [
   'S1E1 Second Contact',
   'S1E2 Envoys',
   'S1E3 Temporal Edict',
@@ -826,7 +821,30 @@ LDEpisode = [
   'S1E7 Much Ado About Boimler',
   'S1E8 Veritas',
   'S1E9 Crisis Point',
-  'S1E10 No Small Parts'
+  'S1E10 No Small Parts',
+  'S2E1 Strange Energies',
+  'S2E2 Kayshon, His Eyes Open',
+  'S2E3 We\'ll Always Have Tom Paris',
+  'S2E4 Mugato, Gumato',
+  'S2E5 An Embarrassment of Dooplers',
+  'S2E6 The Spy Humongous',
+  'S2E7 Where Pleasant Fountains Lie',
+  'S2E8 I, Excretus',
+  'S2E9 wej Duj',
+  'S2E10 First First Contact'
+]
+
+PRepisode = [
+  'S1E1 Lost & Found Part 1',
+  'S1E2 Lost & Found Part 2',
+  'S1E3 Starstruck',
+  'S1E4 Dream Catcher',
+  'S1E5 Terror Firma',
+  'S1E6 Kobayashi',
+  'S1E7 First Con-tact',
+  'S1E8 Time Amok',
+  'S1E9 A Moral Star Part 1',
+  'S1E10 A Moral Star Part 2'
 ]
 
 TNGMovies = [
@@ -852,6 +870,26 @@ RebootMovies = [
   'Star Trek Beyond'
 ]
 
+series = [
+   'Star Trek The Original Series',
+   'Star Trek The Animated Series',
+   'Star Trek The Next Generation',
+   'Star Trek Deep Space Nine',
+   'Star Trek Voyager',
+   'Star Trek Enterprise',
+   'Star Trek Discovery',
+   'Star Trek Short Treks',
+   'Star Trek Picard',
+   'Star Trek Lower Decks',
+   'Star Trek Prodigy'
+]
+
+movieSeries = [
+   'Star Trek The Original Series Movies',
+   'Star Trek The Next Generation Movies',
+   'Star Trek Reboot Movies',
+]
+
 TVMapping = {
     0 : TOSepisode,
     1 : TASepisode,
@@ -859,9 +897,11 @@ TVMapping = {
     3 : DS9episode,
     4 : VOYepisode,
     5 : ENTepisode,
-    6 : DISEpisode,
-    7 : PICEpisode,
-    8 : LDEpisode
+    6 : DISepisode,
+    7 : STepisode,
+    8 : PICepisode,
+    9 : LDepisode,
+    10 : PRepisode
 }
 
 MovieMapping = {
