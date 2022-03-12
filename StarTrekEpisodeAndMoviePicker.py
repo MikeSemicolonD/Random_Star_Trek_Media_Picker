@@ -782,7 +782,20 @@ DISepisode = [
   'S3E10 Terra Firma Part 2',
   'S3E11 SuKal',
   'S3E12 There Is a Tide...',
-  'S3E13 That Hope Is You, Part 2'
+  'S3E13 That Hope Is You, Part 2',
+  'S4E1 Kobayashi Maru',
+  'S4E2 Anomaly',
+  'S4E3 Choose to Live',
+  'S4E4 All Is Possible',
+  'S4E5 The Examples',
+  'S4E6 Stormy Weather',
+  'S4E7 ...But to Connect',
+  'S4E8 All In',
+  'S4E9 Rubicon',
+  'S4E10 The Galactic Barrier',
+  'S4E11 Rosetta',
+  'S4E12 Species Ten-C',
+  'S4E13 TBD'
 ]
 
 STepisode = [
@@ -808,7 +821,17 @@ PICepisode = [
   'S1E7 Nepenthe',
   'S1E8 Broken Pieces',
   'S1E9 Et in Arcadia Ego, Part 1',
-  'S1E10 Et in Arcadia Ego, Part 2'
+  'S1E10 Et in Arcadia Ego, Part 2',
+  'S2E1 The Star Gazer',
+  'S2E2 Penance',
+  'S2E3 TBD',
+  'S2E4 TBD',
+  'S2E5 TBD',
+  'S2E6 TBD',
+  'S2E7 TBD',
+  'S2E8 TBD',
+  'S2E9 TBD',
+  'S2E10 TBD'
 ]
 
 LDepisode = [
@@ -847,6 +870,8 @@ PRepisode = [
   'S1E10 A Moral Star Part 2'
 ]
 
+SNWepisode = []
+
 TNGMovies = [
   'Star Trek Generations',
   'Star Trek First Contact',
@@ -881,7 +906,8 @@ series = [
    'Star Trek Short Treks',
    'Star Trek Picard',
    'Star Trek Lower Decks',
-   'Star Trek Prodigy'
+   'Star Trek Prodigy'#,
+   #'Star Trek Strange New Worlds'
 ]
 
 movieSeries = [
@@ -901,7 +927,8 @@ TVMapping = {
     7 : STepisode,
     8 : PICepisode,
     9 : LDepisode,
-    10 : PRepisode
+    10 : PRepisode#,
+    #11 : SNWepisode
 }
 
 MovieMapping = {
