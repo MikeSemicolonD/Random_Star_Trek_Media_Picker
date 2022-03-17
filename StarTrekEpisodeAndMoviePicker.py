@@ -795,7 +795,7 @@ DISepisode = [
   'S4E10 The Galactic Barrier',
   'S4E11 Rosetta',
   'S4E12 Species Ten-C',
-  'S4E13 TBD'
+  'S4E13 Coming Home'
 ]
 
 STepisode = [
@@ -824,14 +824,14 @@ PICepisode = [
   'S1E10 Et in Arcadia Ego, Part 2',
   'S2E1 The Star Gazer',
   'S2E2 Penance',
-  'S2E3 TBD',
-  'S2E4 TBD',
-  'S2E5 TBD',
-  'S2E6 TBD',
-  'S2E7 TBD',
-  'S2E8 TBD',
-  'S2E9 TBD',
-  'S2E10 TBD'
+  'S2E3 Assimilation'#,
+  #'S2E4 TBD',
+  #'S2E5 TBD',
+  #'S2E6 TBD',
+  #'S2E7 TBD',
+  #'S2E8 TBD',
+  #'S2E9 TBD',
+  #'S2E10 TBD'
 ]
 
 LDepisode = [
