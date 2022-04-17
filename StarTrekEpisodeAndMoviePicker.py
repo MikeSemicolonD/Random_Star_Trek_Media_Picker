@@ -827,9 +827,9 @@ PICepisode = [
   'S2E3 Assimilation',
   'S2E4 Watcher',
   'S2E5 Fly Me to the Moon',
-  'S2E6 Two of One'#,
-  #'S2E7 TBD',
-  #'S2E8 TBD',
+  'S2E6 Two of One',
+  'S2E7 Monsters',
+  'S2E8 Mercy'#,
   #'S2E9 TBD',
   #'S2E10 TBD'
 ]
