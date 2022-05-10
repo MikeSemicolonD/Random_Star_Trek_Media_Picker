@@ -870,7 +870,18 @@ PRepisode = [
   'S1E10 A Moral Star Part 2'
 ]
 
-SNWepisode = []
+SNWepisode = [
+  'S1E1 Strange New Worlds',
+  'S1E2 Children of the Comet',
+  'S1E3 Ghosts of Illyria',
+  'S1E4 Memento Mori',
+  'S1E5 Spock Amok'#,
+  #'S1E6 TBD',
+  #'S1E7 TBD',
+  #'S1E8 TBD',
+  #'S1E9 TBD',
+  #'S1E10 TBD'
+]
 
 TNGMovies = [
   'Star Trek Generations',
@@ -906,8 +917,8 @@ series = [
    'Star Trek Short Treks',
    'Star Trek Picard',
    'Star Trek Lower Decks',
-   'Star Trek Prodigy'#,
-   #'Star Trek Strange New Worlds'
+   'Star Trek Prodigy',
+   'Star Trek Strange New Worlds'
 ]
 
 movieSeries = [
@@ -927,8 +938,8 @@ TVMapping = {
     7 : STepisode,
     8 : PICepisode,
     9 : LDepisode,
-    10 : PRepisode#,
-    #11 : SNWepisode
+    10 : PRepisode,
+    11 : SNWepisode
 }
 
 MovieMapping = {
