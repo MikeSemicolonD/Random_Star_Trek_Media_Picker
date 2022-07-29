@@ -875,12 +875,12 @@ SNWepisode = [
   'S1E2 Children of the Comet',
   'S1E3 Ghosts of Illyria',
   'S1E4 Memento Mori',
-  'S1E5 Spock Amok'#,
-  #'S1E6 TBD',
-  #'S1E7 TBD',
-  #'S1E8 TBD',
-  #'S1E9 TBD',
-  #'S1E10 TBD'
+  'S1E5 Spock Amok',
+  'S1E6 Lift Us Where Suffering Cannot Reach',
+  'S1E7 The Serene Squall',
+  'S1E8 The Elysian Kingdom',
+  'S1E9 All Those Who Wander',
+  'S1E10 A Quality of Mercy'
 ]
 
 TNGMovies = [
