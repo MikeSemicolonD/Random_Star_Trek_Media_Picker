@@ -4,6 +4,8 @@ import webbrowser
 
 random.seed(time.time())
 
+# Episodes
+
 TOSepisode = [
    'S1E01 The Man Trap',
    'S1E02 Charlie X',
@@ -883,6 +885,8 @@ SNWepisode = [
   'S1E10 A Quality of Mercy'
 ]
 
+# Movies
+
 TNGMovies = [
   'Star Trek Generations',
   'Star Trek First Contact',
@@ -906,6 +910,8 @@ RebootMovies = [
   'Star Trek Beyond'
 ]
 
+# Television Series
+
 series = [
    'Star Trek The Original Series',
    'Star Trek The Animated Series',
@@ -921,11 +927,15 @@ series = [
    'Star Trek Strange New Worlds'
 ]
 
+# Movie Eras
+
 movieSeries = [
    'Star Trek The Original Series Movies',
    'Star Trek The Next Generation Movies',
    'Star Trek Reboot Movies',
 ]
+
+# Mappings
 
 TVMapping = {
     0 : TOSepisode,
