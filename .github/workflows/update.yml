@@ -1,0 +1,37 @@
+name: Update Media Picker
+on:
+  workflow_dispatch: {}
+#  schedule: comment out the push part and use this when done
+#    - cron: '0 0 1 * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10"]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pylint
+        
+    - name: Get Star Trek Data & Update Python Script
+    
+    - name: Analysing the code with pylint
+      run: |
+        pylint $(git ls-files '*.py')
+    - name: Commit files # transfer the new html files back into the repository
+      run: |
+        git config --local user.name "Workflow Bot"
+        git add -a
+        git commit -m "Monthly Update"
+    - name: Push changes # push the output folder to your repo
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
