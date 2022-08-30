@@ -267,7 +267,7 @@ TNGepisodes = [
   'S7E25 All Good Things...'
 ]
 
-DS9episodes = [
+DSNepisodes = [
   'S1E1 Emissary, Part I',
   'S1E2 Emissary, Part II',
   'S1E3 Past Prologue',
@@ -445,7 +445,7 @@ DS9episodes = [
   'S7E25 What You Leave Behind'
 ]
 
-VOYepisodes = [
+Vepisodes = [
   'S1E1-2 Caretaker',
   'S1E3 Parallax',
   'S1E4 Time and Again',
@@ -618,7 +618,7 @@ VOYepisodes = [
   'S7E25 Endgame'
 ]
 
-ENTepisodes = [
+Eepisodes = [
   'S1E1-2 Broken Bow',
   'S1E3 Fight or Flight',
   'S1E4 Strange New World',
@@ -743,7 +743,7 @@ TASepisodes = [
   'S2E22 The Counter-Clock Incident'
 ]
 
-DISepisodes = [
+Depisodes = [
   'S1E1 The Vulcan Hello',
   'S1E2 Battle at the Binary Stars',
   'S1E3 Context is for Kings',
@@ -813,7 +813,7 @@ STepisodes = [
   'S2E6 Children of Mars'
 ]
 
-PICepisodes = [
+Pepisodes = [
   'S1E1 Remembrance',
   'S1E2 Maps and Legends',
   'S1E3 The End Is the Beginning',
@@ -859,7 +859,7 @@ LDepisodes = [
   'S2E10 First First Contact'
 ]
 
-PRepisodes = [
+Pepisodes1 = [
   'S1E1 Lost & Found Part 1',
   'S1E2 Lost & Found Part 2',
   'S1E3 Starstruck',
@@ -941,14 +941,14 @@ TVMapping = {
     0 : TOSepisodes,
     1 : TASepisodes,
     2 : TNGepisodes,
-    3 : DS9episodes,
-    4 : VOYepisodes,
-    5 : ENTepisodes,
-    6 : DISepisodes,
+    3 : DSNepisodes,
+    4 : Vepisodes,
+    5 : Eepisodes,
+    6 : Depisodes,
     7 : STepisodes,
-    8 : PICepisodes,
+    8 : Pepisodes,
     9 : LDepisodes,
-    10 : PRepisodes,
+    10 : Pepisodes1,
     11 : SNWepisodes
 }
 
