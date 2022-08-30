@@ -6,7 +6,7 @@ random.seed(time.time())
 
 # Episodes
 
-TOSepisode = [
+TOSepisodes = [
    'S1E01 The Man Trap',
    'S1E02 Charlie X',
    'S1E03 Where No Man Has Gone Before',
@@ -88,7 +88,7 @@ TOSepisode = [
    'S3E24 Turnabout Intruder',
 ]
 
-TNGepisode = [
+TNGepisodes = [
   'S1E1-2 Encounter at Farpoint',
   'S1E3 The Naked Now',
   'S1E4 Code of Honor',
@@ -267,7 +267,7 @@ TNGepisode = [
   'S7E25 All Good Things...'
 ]
 
-DS9episode = [
+DS9episodes = [
   'S1E1 Emissary, Part I',
   'S1E2 Emissary, Part II',
   'S1E3 Past Prologue',
@@ -445,7 +445,7 @@ DS9episode = [
   'S7E25 What You Leave Behind'
 ]
 
-VOYepisode = [
+VOYepisodes = [
   'S1E1-2 Caretaker',
   'S1E3 Parallax',
   'S1E4 Time and Again',
@@ -618,7 +618,7 @@ VOYepisode = [
   'S7E25 Endgame'
 ]
 
-ENTepisode = [
+ENTepisodes = [
   'S1E1-2 Broken Bow',
   'S1E3 Fight or Flight',
   'S1E4 Strange New World',
@@ -718,7 +718,7 @@ ENTepisode = [
   'S4E22 These Are the Voyages...'
 ]
 
-TASepisode = [
+TASepisodes = [
   'S1E1 Beyond the Farthest Star',
   'S1E2 Yesteryear',
   'S1E3 One of Our Planets is Missing',
@@ -743,7 +743,7 @@ TASepisode = [
   'S2E22 The Counter-Clock Incident'
 ]
 
-DISepisode = [
+DISepisodes = [
   'S1E1 The Vulcan Hello',
   'S1E2 Battle at the Binary Stars',
   'S1E3 Context is for Kings',
@@ -800,7 +800,7 @@ DISepisode = [
   'S4E13 Coming Home'
 ]
 
-STepisode = [
+STepisodes = [
   'S1E1 Runaway',
   'S1E2 Calypso',
   'S1E3 The Brightest Star',
@@ -813,7 +813,7 @@ STepisode = [
   'S2E6 Children of Mars'
 ]
 
-PICepisode = [
+PICepisodes = [
   'S1E1 Remembrance',
   'S1E2 Maps and Legends',
   'S1E3 The End Is the Beginning',
@@ -836,7 +836,7 @@ PICepisode = [
   'S2E10 Farewell'
 ]
 
-LDepisode = [
+LDepisodes = [
   'S1E1 Second Contact',
   'S1E2 Envoys',
   'S1E3 Temporal Edict',
@@ -859,7 +859,7 @@ LDepisode = [
   'S2E10 First First Contact'
 ]
 
-PRepisode = [
+PRepisodes = [
   'S1E1 Lost & Found Part 1',
   'S1E2 Lost & Found Part 2',
   'S1E3 Starstruck',
@@ -872,7 +872,7 @@ PRepisode = [
   'S1E10 A Moral Star Part 2'
 ]
 
-SNWepisode = [
+SNWepisodes = [
   'S1E1 Strange New Worlds',
   'S1E2 Children of the Comet',
   'S1E3 Ghosts of Illyria',
@@ -887,14 +887,14 @@ SNWepisode = [
 
 # Movies
 
-TNGMovies = [
+TNGmovies = [
   'Star Trek Generations',
   'Star Trek First Contact',
   'Star Trek Insurrection',
   'Star Trek Nemesis',
 ]
 
-TOSMovies = [
+TOSmovies = [
   'Star Trek The Motion Picture',
   'Star Trek The Wrath of Khan',
   'Star Trek The Search for Spock',
@@ -904,7 +904,7 @@ TOSMovies = [
   'Star Trek Generations',
 ]
 
-RebootMovies = [
+RKmovies = [
   'Star Trek (2009)',
   'Star Trek Into Darkness',
   'Star Trek Beyond'
@@ -938,24 +938,24 @@ movieSeries = [
 # Mappings
 
 TVMapping = {
-    0 : TOSepisode,
-    1 : TASepisode,
-    2 : TNGepisode,
-    3 : DS9episode,
-    4 : VOYepisode,
-    5 : ENTepisode,
-    6 : DISepisode,
-    7 : STepisode,
-    8 : PICepisode,
-    9 : LDepisode,
-    10 : PRepisode,
-    11 : SNWepisode
+    0 : TOSepisodes,
+    1 : TASepisodes,
+    2 : TNGepisodes,
+    3 : DS9episodes,
+    4 : VOYepisodes,
+    5 : ENTepisodes,
+    6 : DISepisodes,
+    7 : STepisodes,
+    8 : PICepisodes,
+    9 : LDepisodes,
+    10 : PRepisodes,
+    11 : SNWepisodes
 }
 
 MovieMapping = {
-    0 : TOSMovies,
-    1 : TNGMovies,
-    2 : RebootMovies
+    0 : TOSmovies,
+    1 : TNGmovies,
+    2 : RKmovies
 }
 
 while(True):
