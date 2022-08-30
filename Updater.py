@@ -413,7 +413,7 @@ try:
             
             mappingArray.append(mediaArrayName)
             
-            print(mediaArrayName)
+            #print(mediaArrayName)
             
             # update script with new array
             if mediaArrayName in script:
