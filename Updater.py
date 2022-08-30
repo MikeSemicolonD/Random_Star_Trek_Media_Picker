@@ -224,6 +224,7 @@ try:
                 print('parsing '+episodeLists)
                 tableParser.feed(wikipedia.page(episodeLists, auto_suggest=False).html())
                 rawShows.append({ episodeLists[episodeLists.index(':')+2:episodeLists.index('episodes')-1] : tableParser.parsedData })
+                tableParser.parsedData = []
         else:
             print('parsing '+mediaLists)
             movieParser.feed(wikipedia.page(mediaLists, auto_suggest=False).html())
@@ -247,7 +248,9 @@ try:
     for showKeys in rawShows:
         #print(showKeys)
         for shows, showEpisodes in showKeys.items():
+            #print(shows)
             #print(showEpisodes)
+            
             numberInFirstCol = False
             tableLength = 0
 
@@ -257,7 +260,7 @@ try:
             partNo = 0
                     
             episodeNoOverall = 0
-            episodeNoInSeason = 0
+            episodeNoInSeason = 1
             
             for episodeRow in showEpisodes:
                 #print(episodeRow)
@@ -278,7 +281,7 @@ try:
                     
                     if numberInFirstCol:
 
-                        if episodeRow[1].isnumeric():
+                        if episodeRow[1][0].isnumeric():
                             # some episodes are counted as multiple (by using an <hr> tag or '-')
                             if '~' in episodeRow[0]: # we substitute an <hr> tag for a tilde when parsing
                                 insertAsAnotherEpisode = True
@@ -335,8 +338,6 @@ try:
                             episodeName = episodeRow[1]
                     # if first column doesn't have a number then it's a pilot 'season' or 'season 0'
                     else:
-                        episodeNoInSeason = 1
-                        episodeNoOverall = 0;
                         episodeName = episodeRow[0]
 
                     #print(episodeName)
@@ -364,27 +365,27 @@ try:
 
             # when done add it to list of TVShows
             if len(season) != 0:
-                #print(season)
                 TVShows[shows] = season
                 season = []
 
     # Debugging
 
-    for show in TVShows:
-        print(show)
+##    for show, episodes in TVShows.items():
+##        print(show)
+##        print(episodes)
     
-    ##for era, movie in Movies.items():
-    ##    print(era)
-    ##    print(movie)
+##    for era, movies in Movies.items():
+##      print(era)
+##      print(movies)
             
     # Find in the python script where the arrays are and overwrite them
     print('Reading script')
-    file = open("StarTrekMediaPicker.py", "rt")
+    file = open("StarTrekMediaPicker.py", "r", encoding='utf-8')
     script = file.read()
     file.close()
 
     # for each movie era -> movies and tv shows -> episode ((eras * movies) + (series * episodes)) 
-    for mediaType in [TVShows]:
+    for mediaType in [Movies, TVShows]:
 
         mappingArray = []
         isFilm = False
@@ -449,9 +450,32 @@ try:
         replacement += '}'
                 
         script = script[:startIndex]+replacement+script[endIndex+1:]
-                
+
+    # update labels array
+
+    # Update labels for the movies
+    startIndex = script.index('movieSeries')
+    endIndex = startIndex+script[startIndex:].index(']')
+    replacement = 'movieSeries = [\n'
+    for era, movies in Movies.items():
+        replacement += '   \''+era+'\',\n'
+      
+    replacement += ']'
+    script = script[:startIndex]+replacement+script[endIndex+1:]
+
+    # Update labels for the tv shows
+    startIndex = script.index('series')
+    endIndex = startIndex+script[startIndex:].index(']')
+    replacement = 'series = [\n'
+    for show, episodes in TVShows.items():
+        replacement += '   \''+show+'\',\n'
+      
+    replacement += ']'
+    script = script[:startIndex]+replacement+script[endIndex+1:]
+
+    # Update the script
     print('Writing to script')
-    file = open("StarTrekMediaPicker.py", "wt")
+    file = open("StarTrekMediaPicker.py", "w", encoding='utf-8')
     file.write(script)
     file.close()
     
