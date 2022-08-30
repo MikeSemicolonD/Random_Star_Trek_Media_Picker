@@ -204,9 +204,8 @@ class HTMLTableParser(HTMLParser):
 
 try:
 
-    TVShows = []
-    MovieEras = []
-    Movies = []
+    TVShows = {}
+    Movies = {}
 
     rawShows = []
     rawMovies = []
@@ -219,31 +218,32 @@ try:
     for mediaLists in list(filter(lambda x: 'star trek films' in x.lower() or 'star trek episodes' in x.lower(), wikipedia.page("Star Trek", auto_suggest=False).links)):
         # Get & Parse HTML pages for their lists
         print('Getting '+mediaLists)
-##        if 'episode' in mediaLists:
-##            episodeParser.feed(wikipedia.page(mediaLists, auto_suggest=False).html())
-##            for episodeLists in list(filter(lambda x: 'episodes' in x.lower() and 'list' in x.lower(), episodeParser.parsedData)):
-##                print('parsing '+episodeLists)
-##                tableParser.feed(wikipedia.page(episodeLists, auto_suggest=False).html())
-##                rawShows.append({ episodeLists[episodeLists.index(':')+2:episodeLists.index('episodes')-1] : tableParser.parsedData })
-##        else:
-        if True:
+        if 'episode' in mediaLists:
+            episodeParser.feed(wikipedia.page(mediaLists, auto_suggest=False).html())
+            for episodeLists in list(filter(lambda x: 'episodes' in x.lower() and 'list' in x.lower(), episodeParser.parsedData)):
+                print('parsing '+episodeLists)
+                tableParser.feed(wikipedia.page(episodeLists, auto_suggest=False).html())
+                rawShows.append({ episodeLists[episodeLists.index(':')+2:episodeLists.index('episodes')-1] : tableParser.parsedData })
+        else:
             print('parsing '+mediaLists)
             movieParser.feed(wikipedia.page(mediaLists, auto_suggest=False).html())
-            rawMovies.append(movieParser.parsedData)
+            rawMovies = movieParser.parsedData
 
+
+    # Parse every movie
     categorie = ''
     movieList = []
     for movieKey in rawMovies:
-        if '(' in movieKey and len(categorie) != 0:
-            if categorie not in MovieEras:
-                MovieEras.append(categorie)
+        if '(' in movieKey and 'film' not in movieKey and len(categorie) != 0:
             movieList.append(movieKey)
         else:
             if len(movieList) != 0:
-                Movies.append({ categorie : movieList })
+                Movies[categorie] = movieList
                 movieList = []
             categorie = movieKey
-    
+
+            
+    # Parse every episode from every series and store them into a key value pair where the key is the show name and the value is the array of all episodes
     for showKeys in rawShows:
         #print(showKeys)
         for shows, showEpisodes in showKeys.items():
@@ -277,7 +277,7 @@ try:
                     noInSeasonDividerIndex = 0
                     
                     if numberInFirstCol:
-                         #   episodeNoInSeason = int(episodeRow[1]) # converting to ints might be an issue if season numbers have decimals
+
                         if episodeRow[1].isnumeric():
                             # some episodes are counted as multiple (by using an <hr> tag or '-')
                             if '~' in episodeRow[0]: # we substitute an <hr> tag for a tilde when parsing
@@ -301,7 +301,6 @@ try:
                                 noInSeasonHasDivider = True
                                 noInSeasonDividerIndex = episodeRow[1].index('–')
 
-                            #if episodeRow[0].isnumeric():
                             if noInSeasonHasDivider:
                                 episodeNoInSeason = int(episodeRow[1][:noInSeasonDividerIndex]) # converting to ints might be an issue if season numbers have decimals
                             else:
@@ -347,10 +346,12 @@ try:
                         seasonNo=seasonNo+1;
 
                     # string replacements
-                    episodeName = episodeName.replace("\\","",5)
+                    #episodeName = episodeName.replace("\\","",5)
+                    episodeName = episodeName.replace("\'","",5)
                     episodeName = episodeName.replace("\"","",6)
                     episodeName = episodeName.replace("\xa0"," ",6)
-                    
+
+                    # account for splits in the table rows
                     if insertAsAnotherEpisode:
                         season.append("S"+str(seasonNo)+"E"+str(episodeNoInSeason).zfill(2)+" "+episodeName+" Part I")
                         season.append("S"+str(seasonNo)+"E"+str(episodeNoInSeason+1).zfill(2)+" "+episodeName+" Part II")
@@ -361,40 +362,98 @@ try:
                         episodeNoInSeason = episodeNoInSeason+1
                         episodeNoOverall = episodeNoOverall+1
 
-
-
             # when done add it to list of TVShows
             if len(season) != 0:
                 #print(season)
-                TVShows.append({ shows : season })
+                TVShows[shows] = season
                 season = []
 
-    #for show in TVShows:
-    #    print(show)
+    # Debugging
+
+    for show in TVShows:
+        print(show)
     
-    # TODO: clean up the data and create lists within lists 
-    for movie in Movies:
-        print(movie)
+    ##for era, movie in Movies.items():
+    ##    print(era)
+    ##    print(movie)
             
     # Find in the python script where the arrays are and overwrite them
-    #file = open("StarTrekEpisodeAndMoviePicker.py", "rt")
-    #script = file.read()
-    #file.close()
+    print('Reading script')
+    file = open("StarTrekMediaPicker.py", "rt")
+    script = file.read()
+    file.close()
 
     # for each movie era -> movies and tv shows -> episode ((eras * movies) + (series * episodes)) 
-    for media in [MovieEras, TVShows]:
-        for mediaPeices in media:
+    for mediaType in [TVShows]:
+
+        mappingArray = []
+        isFilm = False
+        
+        for mediaName, media in mediaType.items():
+
+            mediaTypeName = ''
+            replacement = ''
+
+            if 'film' in mediaName:
+                mediaTypeName = 'movies'
+                isFilm = True
+            else:
+                mediaTypeName = 'episodes'
+                isFilm = False
+            
             # Create shortening using key name
-            for categorie, mediaPeice in mediaPeices.items():
-                print(mediaPeice)
-                    # iterate through each line to find the location of the shortenedName
-                    #for line in data:
-                        #if we found the variables remember the index and find the end of it
-                        #Update mapping array (Find the variable, then the end point.)
+            mediaArrayName = ''.join(list(filter(lambda x: x.isupper(), mediaName)))+mediaTypeName
+
+            # make sure we don't end up with duplicate array names
+            instanceCount = 1;
+            while mediaArrayName in mappingArray:
+                mediaArrayName = mediaArrayName+str(instanceCount)
+                instanceCount = instanceCount+1
+            
+            mappingArray.append(mediaArrayName)
+            
+            print(mediaArrayName)
+            
+            # update script with new array
+            if mediaArrayName in script:
+                startIndex = script.index(mediaArrayName)
+                endIndex = startIndex+script[startIndex:].index(']')
+
+                replacement += mediaArrayName+' = [\n'
+            
+                for mediaPeice in media:
+                    if 'TBD' in media or 'TBA' in media: # anything TBD/TBA is to be ignored
+                        continue
                     
-        #Update label array (in first loop)
-    
-    
+                    replacement += '   \''+mediaPeice+'\',\n'
+
+                replacement += ']'
+                
+                script = script[:startIndex]+replacement+script[endIndex+1:]
+        
+        # update mapping array
+        mappingCount = 0
+        if isFilm:
+            startIndex = script.index('MovieMapping')
+            replacement = 'MovieMapping = {\n'
+        else:
+            startIndex = script.index('TVMapping')
+            replacement = 'TVMapping = {\n'
+             
+        endIndex = startIndex+script[startIndex:].index('}')
+        
+        for mapping in mappingArray:
+            replacement += '\t'+str(mappingCount)+' : '+mapping+',\n'
+            mappingCount = mappingCount+1
+             
+        replacement += '}'
+                
+        script = script[:startIndex]+replacement+script[endIndex+1:]
+                
+    print('Writing to script')
+    file = open("StarTrekMediaPicker.py", "wt")
+    file.write(script)
+    file.close()
     
 except BaseException as err:
     print(f"Unexpected {err=}, {type(err)=}")
