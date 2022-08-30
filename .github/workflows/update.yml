@@ -1,8 +1,8 @@
 name: Update Media Picker
 on:
   workflow_dispatch: {}
-#  schedule: comment out the push part and use this when done
-#    - cron: '0 0 1 * *'
+  schedule: 
+    - cron: '0 0 1 * *'
 
 jobs:
   update:
