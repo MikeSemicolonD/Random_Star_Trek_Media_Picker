@@ -910,7 +910,7 @@ RebootMovies = [
   'Star Trek Beyond'
 ]
 
-# Television Series
+# Television Series labels
 
 series = [
    'Star Trek The Original Series',
@@ -927,7 +927,7 @@ series = [
    'Star Trek Strange New Worlds'
 ]
 
-# Movie Eras
+# Movie Era labels
 
 movieSeries = [
    'Star Trek The Original Series Movies',
