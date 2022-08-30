@@ -31,15 +31,12 @@ jobs:
     
     - name: Analysing the code with pylint
       run: |
-        pylint $(git ls-files 'StarTrekMediaPicker.py')
+        pylint --errors-only $(git ls-files 'StarTrekMediaPicker.py')
       
   push:
     needs: update
     name: Push Changes
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.9"]
     steps:  
 
     - name: Commit files # transfer the new html files back into the repository
