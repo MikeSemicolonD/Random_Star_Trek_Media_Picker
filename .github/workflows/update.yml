@@ -41,7 +41,7 @@ jobs:
 
     - name: Commit files # transfer the new html files back into the repository
       run: |
-        git config --local user.name "Workflow Bot"
+        git config --global user.name "Workflow Bot"
         git add -a
         git commit -m "Monthly Update"
 
