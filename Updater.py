@@ -480,12 +480,14 @@ try:
     file.write(script)
     file.close()
     
-    file = open("README.md", "wr", encoding='utf-8')
+    file = open("README.md", "r", encoding='utf-8')
     readme = file.read()
+    file.close()
     
     startIndex = script.index('Data Last Updated: ')
     readme[:startIndex]+'<strong>'+datetime.now().strftime("%B %d, %Y")+'</strong>\n</div>\n'
     
+    file = open("README.md", "w", encoding='utf-8')
     file.write(readme)
     file.close()
     
