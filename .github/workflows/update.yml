@@ -39,15 +39,4 @@ jobs:
         author_name: Workflow Bot
         author_email: WorkflowBot@Github.com
         message: 'Automated Update'
-        add: 'StarTrekMediaPicker.py'
-          
-   # - name: Commit files # transfer the new html files back into the repository
-   #   run: |
-   #     git config --global user.name "Workflow Bot"
-   #     git add -A
-   #     git commit -m "Monthly Update"
-
-   # - name: Push changes # push the output folder to your repo
-   #   uses: ad-m/github-push-action@master
-   #   with:
-   #     github_token: ${{ secrets.TOKEN }}
+        add: '*.py --force'
