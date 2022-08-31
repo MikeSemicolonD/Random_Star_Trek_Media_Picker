@@ -31,12 +31,12 @@ jobs:
     
     - name: Analysing the code with pylint
       run: |
-        pylint --errors-only $(git ls-files 'StarTrekMediaPicker.py')
+        pylint --errors-only StarTrekMediaPicker.py
         
     - name: Commit files # transfer the new html files back into the repository
       run: |
         git config --global user.name "Workflow Bot"
-        git add --all
+        git add -A
         git commit -m "Monthly Update"
 
     - name: Push changes # push the output folder to your repo
