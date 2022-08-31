@@ -13,6 +13,9 @@ jobs:
         python-version: ["3.9"]
     steps:
     - uses: actions/checkout@v3
+      with:
+        repository: ${{ github.event.pull_request.head.repo.full_name }}
+        ref: ${{ github.event.pull_request.head.ref }}
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
@@ -39,4 +42,3 @@ jobs:
         author_name: Workflow Bot
         author_email: WorkflowBot@Github.com
         message: 'Automated Update'
-        add: '*.py --force'
