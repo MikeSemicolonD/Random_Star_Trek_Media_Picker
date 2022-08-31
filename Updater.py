@@ -484,8 +484,8 @@ try:
     readme = file.read()
     file.close()
     
-    startIndex = script.index('Data Last Updated: ')
-    readme[:startIndex]+'<strong>'+datetime.now().strftime("%B %d, %Y")+'</strong>\n</div>\n'
+    startIndex = readme.index('Data Last Updated: ')
+    readme = readme[:startIndex]+'Data Last Updated: <strong>'+datetime.now().strftime("%B %d, %Y")+'</strong>\n</div>\n'
     
     file = open("README.md", "w", encoding='utf-8')
     file.write(readme)
