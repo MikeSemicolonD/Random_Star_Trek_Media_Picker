@@ -1,5 +1,6 @@
 import wikipedia
 from html.parser import HTMLParser
+from datetime import datetime
 
 class MovieHTMLParser(HTMLParser):
 
@@ -477,6 +478,15 @@ try:
     print('Writing to script')
     file = open("StarTrekMediaPicker.py", "w", encoding='utf-8')
     file.write(script)
+    file.close()
+    
+    file = open("README.md", "wr", encoding='utf-8')
+    readme = file.read()
+    
+    startIndex = script.index('Data Last Updated: ')
+    readme[:startIndex]+'<strong>'+datetime.now().strftime("%B %d, %Y")+'</strong>\n</div>\n'
+    
+    file.write(readme)
     file.close()
     
 except BaseException as err:
