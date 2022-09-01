@@ -1,4 +1,4 @@
-# Random Star Trek Picker (CMD only)
+# Random Star Trek Media Picker (CMD only)
 
 <div align="center">
  Too much Star Trek, too little time? Don't know what Movie/Episode to pick? Then this is the program for you! 
