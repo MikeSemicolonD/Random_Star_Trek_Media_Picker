@@ -432,6 +432,8 @@ try:
                 replacement += ']'
                 
                 script = script[:startIndex]+replacement+script[endIndex+1:]
+            else:
+                print('#TODO: if mediaArrayName not in script we need to add it')
         
         # update mapping array
         mappingCount = 0
