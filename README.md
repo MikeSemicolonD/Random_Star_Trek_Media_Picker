@@ -4,7 +4,7 @@
  Too much Star Trek, too little time? Don't know what Movie/Episode to pick? Then this is the program for you! 
  <br>
  <br>
- This Python 3 program will randomly pick from any Official Star Trek Movie or TV Show.
+ This Python program will randomly pick from any Official Star Trek Movie or TV Show.
  <br>
  <br>
  Simply pick a '<b>Media Type</b>' then pick a '<b>Series</b>'
