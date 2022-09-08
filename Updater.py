@@ -416,7 +416,17 @@ try:
             
             #print(mediaArrayName)
             
-            # update script with new array
+            # update script with new array if it doesn't exist
+            if mediaArrayName not in script:
+                
+                if isFilm:
+                    endIndex = script.index('Movies')+len('Movies')
+                else:
+                    endIndex = script.index('Episodes')+len('Episodes')
+                
+                script = script[:endIndex]+'\n\n'+mediaArrayName+' = []'+script[endIndex:]
+            
+            # update script with new array elements
             if mediaArrayName in script:
                 startIndex = script.index(mediaArrayName)
                 endIndex = startIndex+script[startIndex:].index(']')
@@ -432,8 +442,6 @@ try:
                 replacement += ']'
                 
                 script = script[:startIndex]+replacement+script[endIndex+1:]
-            else:
-                print('#TODO: if mediaArrayName not in script we need to add it')
         
         # update mapping array
         mappingCount = 0
@@ -482,6 +490,7 @@ try:
     file.write(script)
     file.close()
     
+    # Update README
     file = open("README.md", "r", encoding='utf-8')
     readme = file.read()
     file.close()
