@@ -878,6 +878,12 @@ LDepisodes = [
    'S2E10 First First Contact',
    'S3E01 Grounded',
    'S3E02 The Least Dangerous Game',
+   'S3E03 Mining the Minds Mines',
+   'S3E04 Room for Growth',
+   'S3E05 Reflections',
+   'S3E06 Hear All, Trust Nothing',
+   'S3E07 A Mathematically Perfect Redemption',
+   'S3E08 Crisis Point 2: Paradoxus',
 ]
 
 Pepisodes1 = [
@@ -905,6 +911,8 @@ SNWepisodes = [
    'S1E09 All Those Who Wander',
    'S1E10 A Quality of Mercy',
    'S2E01 TBA',
+   'S2E02 TBA',
+   'S2E03 TBA',
 ]
 
 # Movies
