@@ -434,7 +434,7 @@ try:
                 replacement += mediaArrayName+' = [\n'
             
                 for mediaPeice in media:
-                    if 'TBD' in media or 'TBA' in media: # anything TBD/TBA is to be ignored
+                    if 'TBD' in mediaPeice or 'TBA' in mediaPeice: # anything TBD/TBA is to be ignored
                         continue
                     
                     replacement += '   \''+mediaPeice+'\',\n'
