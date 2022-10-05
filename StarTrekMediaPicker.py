@@ -843,16 +843,6 @@ Pepisodes = [
    'S2E08 Mercy',
    'S2E09 Hide and Seek',
    'S2E10 Farewell',
-   'S3E01 TBA',
-   'S3E02 TBA',
-   'S3E03 TBA',
-   'S3E04 TBA',
-   'S3E05 TBA',
-   'S3E06 TBA',
-   'S3E07 TBA',
-   'S3E08 TBA',
-   'S3E09 TBA',
-   'S3E10 TBA',
 ]
 
 LDepisodes = [
@@ -910,9 +900,6 @@ SNWepisodes = [
    'S1E08 The Elysian Kingdom',
    'S1E09 All Those Who Wander',
    'S1E10 A Quality of Mercy',
-   'S2E01 TBA',
-   'S2E02 TBA',
-   'S2E03 TBA',
 ]
 
 # Movies
