@@ -301,9 +301,9 @@ try:
                             elif '–' in episodeRow[1]:
                                 noInSeasonHasDivider = True
                                 noInSeasonDividerIndex = episodeRow[1].index('–')
-                            elif '–' in episodeRow[1]:
+                            elif '-' in episodeRow[1]:
                                 noInSeasonHasDivider = True
-                                noInSeasonDividerIndex = episodeRow[1].index('–')
+                                noInSeasonDividerIndex = episodeRow[1].index('-')
 
                             if noInSeasonHasDivider:
                                 episodeNoInSeason = int(episodeRow[1][:noInSeasonDividerIndex]) # converting to ints might be an issue if season numbers have decimals
