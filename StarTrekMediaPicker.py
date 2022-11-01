@@ -874,6 +874,8 @@ LDepisodes = [
    'S3E06 Hear All, Trust Nothing',
    'S3E07 A Mathematically Perfect Redemption',
    'S3E08 Crisis Point 2: Paradoxus',
+   'S3E09 Trusted Sources',
+   'S3E10 The Stars at Night',
 ]
 
 Pepisodes1 = [
@@ -887,6 +889,8 @@ Pepisodes1 = [
    'S1E08 Time Amok',
    'S1E09 A Moral Star Part I',
    'S1E10 A Moral Star Part II',
+   'S1E11 Asylum',
+   'S1E12 Let Sleeping Borg Lie',
 ]
 
 SNWepisodes = [
