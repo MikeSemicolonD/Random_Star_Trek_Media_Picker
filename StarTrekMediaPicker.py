@@ -891,6 +891,14 @@ Pepisodes1 = [
    'S1E10 A Moral Star Part II',
    'S1E11 Asylum',
    'S1E12 Let Sleeping Borg Lie',
+   'S1E13 All the Worlds a Stage',
+   'S1E14 Crossroads',
+   'S1E15 Masquerade',
+   'S1E16 Preludes',
+   'S1E17 Ghost in the Machine',
+   'S1E18 Mindwalk',
+   'S1E19 Supernova Part I',
+   'S1E20 Supernova Part II',
 ]
 
 SNWepisodes = [
