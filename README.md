@@ -24,5 +24,5 @@
  ASCII art of the TNG Communicator Pin was taken from https://sunnyspot.org/asciiart/gallery/startrek.html
  <br>
  <br>
- Data Last Updated: <strong>December 01, 2022</strong>
+ Data Last Updated: <strong>January 01, 2023</strong>
 </div>
