@@ -26,3 +26,6 @@
  <br>
  Data Last Updated: <strong>January 01, 2023</strong>
 </div>
+
+## Example:
+![Example](example.PNG)
