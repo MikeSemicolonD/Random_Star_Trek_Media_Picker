@@ -941,6 +941,18 @@ RKmovies = [
 # Television Series labels
 
 series = [
+   'The Original Series',
+   'The Animated Series',
+   'The Next Generation',
+   'Deep Space Nine',
+   'Voyager',
+   'Enterprise',
+   'Discovery',
+   'Short Treks',
+   'Picard',
+   'Lower Decks',
+   'Prodigy',
+   'Strange New Worlds',
 ]
 
 # Movie Era labels
@@ -954,6 +966,18 @@ movieSeries = [
 # Mappings
 
 TVMapping = {
+	0 : TOSepisodes,
+	1 : TASepisodes,
+	2 : TNGepisodes,
+	3 : DSNepisodes,
+	4 : Vepisodes,
+	5 : Eepisodes,
+	6 : Depisodes,
+	7 : STepisodes,
+	8 : Pepisodes,
+	9 : LDepisodes,
+	10 : Pepisodes1,
+	11 : SNWepisodes,
 }
 
 MovieMapping = {
