@@ -336,78 +336,73 @@ class MovieParser:
 
     def _extract_movies_after_header(self, header):
         """
-        Extract movie titles from the content following a header
+        Extract movie titles from the content following a header.
+
+        Wikipedia's film pages often structure movies as h3 headers under h2 section headers.
+        For example:
+        <h2>The Original Series films</h2>
+        <h3>Star Trek: The Motion Picture (1979)</h3>
+        <h3>Star Trek II: The Wrath of Khan (1982)</h3>
         """
         movies = []
 
-        # Wikipedia often wraps section content in a div
-        # Try to find the parent section/div first
-        parent = header.find_parent(['section', 'div'])
-
-        if parent:
-            # Look for content within the parent section
-            logger.info(f"  Found parent container: {parent.name}")
-
-            # Search for lists within the parent
-            lists = parent.find_all(['ul', 'ol'])
-            logger.info(f"  Found {len(lists)} lists in parent container")
-
-            for list_elem in lists:
-                for li in list_elem.find_all('li', recursive=False):
-                    movie = self._extract_movie_from_list_item(li)
-                    if movie and movie not in movies:
-                        movies.append(movie)
-                        logger.info(f"    ✓ Found movie: {movie}")
-
-            # Search for tables within the parent
-            tables = parent.find_all('table')
-            logger.info(f"  Found {len(tables)} tables in parent container")
-
-            for table in tables:
-                for row in table.find_all('tr'):
-                    cells = row.find_all(['td', 'th'])
-                    for cell in cells:
-                        for link in cell.find_all('a'):
-                            link_text = link.get_text(separator=' ', strip=True)
-                            if 'Star Trek' in link_text:
-                                cell_text = cell.get_text(separator=' ', strip=True)
-                                year_match = re.search(r'\((\d{4})\)', cell_text)
-                                if year_match:
-                                    movie_title = f"{link_text} ({year_match.group(1)})"
-                                    if movie_title not in movies:
-                                        movies.append(movie_title)
-                                        logger.info(f"    ✓ Found movie from table: {movie_title}")
-
-        # Fallback: check direct siblings
-        if not movies:
-            logger.info(f"  No parent container or no movies found, checking siblings")
-            content_elements = []
+        # First, look for h3 headers after this h2 header (if this is an h2)
+        # This is how Wikipedia structures the Star Trek films page
+        if header.name == 'h2':
+            logger.info(f"  Looking for h3 movie headers after this h2")
             current = header.find_next_sibling()
+            h3_count = 0
 
             while current:
-                # Stop at the next header of the same or higher level
-                if current.name in ['h2', 'h3']:
-                    if current.name == 'h2' or header.name == 'h3':
-                        break
+                # Stop at the next h2
+                if current.name == 'h2':
+                    break
 
-                content_elements.append(current)
+                # Check h3 headers for movie titles
+                if current.name == 'h3':
+                    h3_text = current.get_text(separator=' ', strip=True)
+                    # Remove [edit] links
+                    h3_text = re.sub(r'\[edit\]', '', h3_text).strip()
+
+                    h3_count += 1
+
+                    # Check if this h3 is a movie title (has a year and Star Trek)
+                    if 'Star Trek' in h3_text and re.search(r'\((\d{4})\)', h3_text):
+                        # Extract title with year
+                        match = re.search(r'(Star Trek[^(]*\(\d{4}\))', h3_text)
+                        if match:
+                            movie_title = match.group(1).strip()
+                            if movie_title not in movies:
+                                movies.append(movie_title)
+                                logger.info(f"    ✓ Found movie from h3: {movie_title}")
+
                 current = current.find_next_sibling()
 
-            logger.info(f"  Found {len(content_elements)} sibling elements")
+            logger.info(f"  Checked {h3_count} h3 headers")
 
-            for element in content_elements:
-                # Check lists
-                lists = element.find_all(['ul', 'ol']) if element.name not in ['ul', 'ol'] else [element]
+        # If no movies found from headers, try other methods
+        if not movies:
+            logger.info(f"  No movies in headers, trying lists/tables")
+
+            # Try to find parent container
+            parent = header.find_parent(['section', 'div'])
+
+            if parent:
+                # Search for lists within the parent
+                lists = parent.find_all(['ul', 'ol'])
+                logger.info(f"  Found {len(lists)} lists in parent container")
 
                 for list_elem in lists:
-                    for li in list_elem.find_all('li', recursive=True):
+                    for li in list_elem.find_all('li', recursive=False):
                         movie = self._extract_movie_from_list_item(li)
                         if movie and movie not in movies:
                             movies.append(movie)
-                            logger.info(f"    ✓ Found movie: {movie}")
+                            logger.info(f"    ✓ Found movie from list: {movie}")
 
-                # Check tables
-                tables = element.find_all('table')
+                # Search for tables within the parent
+                tables = parent.find_all('table')
+                logger.info(f"  Found {len(tables)} tables in parent container")
+
                 for table in tables:
                     for row in table.find_all('tr'):
                         cells = row.find_all(['td', 'th'])
