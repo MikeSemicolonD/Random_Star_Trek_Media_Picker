@@ -269,43 +269,196 @@ class MovieParser:
 
     def parse_movie_page(self, html_content):
         """
-        Parse movie list from Wikipedia
+        Parse movie list from Wikipedia - looks for specific film era sections
         """
         soup = BeautifulSoup(html_content, 'html.parser')
 
-        current_era = ''
-        current_movies = []
+        # Find all h2/h3 headers
+        headers = soup.find_all(['h2', 'h3'])
 
-        # Look for h2/h3 headers followed by lists or tables
-        for element in soup.find_all(['h2', 'h3', 'li', 'ul']):
-            if element.name in ['h2', 'h3']:
-                # Save previous era if exists
-                if current_era and current_movies:
-                    self.movies_by_era[current_era] = current_movies
-                    current_movies = []
+        for header in headers:
+            header_text = header.get_text(strip=True)
+            # Remove [edit] links
+            header_text = re.sub(r'\[edit\]', '', header_text).strip()
 
-                # Get new era name
-                header_text = element.get_text(strip=True)
-                # Remove [edit] links
-                header_text = re.sub(r'\[edit\]', '', header_text)
+            # Only process headers that look like film eras
+            # Must contain "film" and should be a section header (not a subsection about plot, cast, etc.)
+            if not self._is_valid_film_era_header(header_text):
+                continue
 
-                if 'film' in header_text.lower():
-                    current_era = header_text
+            logger.info(f"Found film era header: {header_text}")
 
-            elif element.name == 'li' and current_era:
-                # Extract movie from list item
-                movie_text = element.get_text(strip=True)
-                # Look for movies (usually have year in parentheses)
-                if '(' in movie_text and ')' in movie_text and 'film' not in movie_text.lower():
-                    # Clean up the text
-                    movie_text = re.sub(r'\[\d+\]', '', movie_text)
-                    current_movies.append(movie_text.strip())
+            # Find the next content after this header (before the next header)
+            movies = self._extract_movies_after_header(header)
 
-        # Save last era
-        if current_era and current_movies:
-            self.movies_by_era[current_era] = current_movies
+            if movies:
+                self.movies_by_era[header_text] = movies
+                logger.info(f"  Found {len(movies)} movies in this era")
 
         return self.movies_by_era
+
+    def _is_valid_film_era_header(self, header_text):
+        """
+        Check if a header represents a valid film era section
+        """
+        header_lower = header_text.lower()
+
+        # Must contain 'film'
+        if 'film' not in header_lower:
+            return False
+
+        # Should be a main section, not a subsection
+        # Valid examples: "The Original Series films", "Kelvin timeline films"
+        # Invalid examples: "Film production", "Filmography", specific movie titles
+
+        # Exclude specific movie titles (they usually have years or colons)
+        if re.search(r'\(\d{4}\)', header_text):  # Has a year like (2009)
+            return False
+
+        # Exclude common subsection headers
+        exclude_keywords = ['production', 'development', 'cast', 'crew', 'reception',
+                           'box office', 'releases', 'home media', 'soundtrack',
+                           'plot', 'premise', 'setting', 'characters', 'critical',
+                           'cancelled', 'unmade', 'potential', 'future']
+
+        for keyword in exclude_keywords:
+            if keyword in header_lower:
+                return False
+
+        # Must be a section about multiple films (plural or "timeline")
+        if 'films' in header_lower or 'timeline' in header_lower:
+            return True
+
+        return False
+
+    def _extract_movies_after_header(self, header):
+        """
+        Extract movie titles from the content following a header
+        """
+        movies = []
+
+        # Get the parent section
+        section = header.find_next_sibling()
+
+        # Look through siblings until we hit another header
+        while section and section.name not in ['h1', 'h2', 'h3']:
+            # Look for list items
+            if section.name in ['ul', 'ol']:
+                for li in section.find_all('li', recursive=False):
+                    movie = self._extract_movie_from_list_item(li)
+                    if movie:
+                        movies.append(movie)
+
+            # Also check if this section contains lists
+            for list_elem in section.find_all(['ul', 'ol'], recursive=True):
+                for li in list_elem.find_all('li', recursive=False):
+                    movie = self._extract_movie_from_list_item(li)
+                    if movie and movie not in movies:  # Avoid duplicates
+                        movies.append(movie)
+
+            section = section.find_next_sibling()
+
+        return movies
+
+    def _extract_movie_from_list_item(self, li):
+        """
+        Extract a movie title from a list item
+        """
+        text = li.get_text(strip=True)
+
+        # Remove citations
+        text = re.sub(r'\[\d+\]', '', text)
+        text = text.strip()
+
+        # Movies should have a year in parentheses
+        if not re.search(r'\(\d{4}\)', text):
+            return None
+
+        # Should start with "Star Trek" (most movies do)
+        if not text.startswith('Star Trek'):
+            return None
+
+        # Extract just the movie title with year
+        # Format is usually: "Star Trek: Movie Title (2009) - description"
+        # We want: "Star Trek: Movie Title (2009)"
+        match = re.match(r'(Star Trek[^(]*\(\d{4}\))', text)
+        if match:
+            return match.group(1).strip()
+
+        return None
+
+
+def _extract_series_name(page_title):
+    """
+    Extract clean series name from Wikipedia page title
+    Examples:
+        "List of Star Trek: The Original Series episodes" -> "The Original Series"
+        "List of Star Trek: Discovery episodes" -> "Discovery"
+        "List of Star Trek: The Animated Series episodes" -> "The Animated Series"
+    """
+    # Remove common prefixes and suffixes
+    name = page_title.replace('List of ', '', 1)
+    name = name.replace(' episodes', '')
+
+    # If there's a colon, take everything after "Star Trek:"
+    if 'Star Trek:' in name:
+        name = name.split('Star Trek:', 1)[1].strip()
+    else:
+        # No colon, just remove "Star Trek"
+        name = name.replace('Star Trek', '').strip()
+
+    return name if name else page_title
+
+
+def _create_array_name(media_name, suffix):
+    """
+    Create a valid Python array name from a media name
+    Examples:
+        "The Original Series", "episodes" -> "TOSepisodes"
+        "Discovery", "episodes" -> "Depisodes"
+        "The Next Generation films", "movies" -> "TNGmovies"
+    """
+    # Known abbreviations for common series/eras
+    abbreviations = {
+        'The Original Series': 'TOS',
+        'The Animated Series': 'TAS',
+        'The Next Generation': 'TNG',
+        'Deep Space Nine': 'DSN',
+        'Voyager': 'V',
+        'Enterprise': 'E',
+        'Discovery': 'D',
+        'Short Treks': 'ST',
+        'Picard': 'P',
+        'Lower Decks': 'LD',
+        'Prodigy': 'P',
+        'Strange New Worlds': 'SNW',
+        'The Original Series films': 'TOS',
+        'The Next Generation films': 'TNG',
+        'Reboot (Kelvin timeline) films': 'RK',
+        'Kelvin timeline films': 'RK',
+    }
+
+    # Check if we have a known abbreviation
+    for full_name, abbr in abbreviations.items():
+        if full_name.lower() in media_name.lower():
+            return abbr + suffix
+
+    # Fallback: use uppercase letters from the name
+    uppercase_letters = ''.join(list(filter(lambda x: x.isupper(), media_name)))
+
+    if len(uppercase_letters) >= 2:
+        return uppercase_letters + suffix
+
+    # Fallback: use first letter of each word
+    words = media_name.split()
+    initials = ''.join([w[0].upper() for w in words if w])
+
+    if initials:
+        return initials + suffix
+
+    # Last resort: use a sanitized version of the name
+    sanitized = media_name.replace(' ', '').replace('-', '').replace(':', '')
+    return sanitized[:10] + suffix
 
 
 def main():
@@ -350,14 +503,7 @@ def main():
 
                                 # Extract series name from title
                                 # e.g., "List of Star Trek: The Original Series episodes" -> "The Original Series"
-                                series_name = series_link
-                                if ':' in series_link:
-                                    series_name = series_link.split(':')[1].replace(' episodes', '').strip()
-                                    if series_name.startswith('List of'):
-                                        series_name = series_name[8:]
-                                else:
-                                    # Handle cases like "List of Star Trek episodes"
-                                    series_name = series_link.replace('List of ', '').replace(' episodes', '').replace('Star Trek', '').strip()
+                                series_name = _extract_series_name(series_link)
 
                                 # Parse episodes
                                 parser = EpisodeTableParser(series_name)
@@ -403,14 +549,8 @@ def main():
             for media_name, media_list in media_type.items():
                 media_type_name = 'movies' if is_film else 'episodes'
 
-                # Create shortening using key name
-                media_array_name = ''.join(list(filter(lambda x: x.isupper(), media_name))) + media_type_name
-
-                # Handle edge cases where there are no uppercase letters
-                if media_array_name == media_type_name:
-                    # Use first letter of each word
-                    words = media_name.split()
-                    media_array_name = ''.join([w[0].upper() for w in words if w]) + media_type_name
+                # Create array name from media name
+                media_array_name = _create_array_name(media_name, media_type_name)
 
                 # Make sure we don't end up with duplicate array names
                 instance_count = 1
