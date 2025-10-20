@@ -338,85 +338,105 @@ class MovieParser:
         """
         Extract movie titles from the content following a header.
 
-        Wikipedia's film pages often structure movies as h3 headers under h2 section headers.
-        For example:
-        <h2>The Original Series films</h2>
-        <h3>Star Trek: The Motion Picture (1979)</h3>
-        <h3>Star Trek II: The Wrath of Khan (1982)</h3>
+        Wikipedia's film pages can structure movies in different ways:
+        - h3 headers for individual films
+        - Tables listing films
+        - Lists of films
         """
         movies = []
 
-        # First, look for h3 headers after this h2 header (if this is an h2)
-        # This is how Wikipedia structures the Star Trek films page
+        # Use find_all_next to get ALL following h2/h3 elements (not just siblings)
+        # This handles cases where content is wrapped in divs
         if header.name == 'h2':
-            logger.info(f"  Looking for h3 movie headers after this h2")
-            current = header.find_next_sibling()
-            h3_count = 0
+            logger.info(f"  Looking for h3 movie headers and tables after this h2")
 
-            while current:
-                # Stop at the next h2
-                if current.name == 'h2':
-                    break
+            # Get all h3 elements that come after this h2 in the document
+            all_h3s = header.find_all_next('h3')
+            # Get all h2 elements that come after this h2
+            all_h2s = header.find_all_next('h2')
 
-                # Check h3 headers for movie titles
-                if current.name == 'h3':
-                    h3_text = current.get_text(separator=' ', strip=True)
-                    # Remove [edit] links
-                    h3_text = re.sub(r'\[edit\]', '', h3_text).strip()
+            # Find the next h2 to know where to stop
+            next_h2 = all_h2s[0] if all_h2s else None
 
-                    h3_count += 1
+            # Filter h3s to only those before the next h2
+            relevant_h3s = []
+            for h3 in all_h3s:
+                if next_h2 and h3.sourceline and next_h2.sourceline:
+                    if h3.sourceline >= next_h2.sourceline:
+                        break
+                elif next_h2:
+                    # Fallback: check if h3 comes before next_h2 by comparing positions
+                    h3_pos = str(h3)
+                    next_h2_pos = str(next_h2)
+                    # This is a crude check, but better than nothing
+                    if next_h2 in list(h3.find_all_next('h2')):
+                        # h3 comes before next_h2
+                        relevant_h3s.append(h3)
+                    else:
+                        break
+                else:
+                    # No next h2, include all h3s
+                    relevant_h3s.append(h3)
 
-                    # Check if this h3 is a movie title (has a year and Star Trek)
-                    if 'Star Trek' in h3_text and re.search(r'\((\d{4})\)', h3_text):
-                        # Extract title with year
-                        match = re.search(r'(Star Trek[^(]*\(\d{4}\))', h3_text)
-                        if match:
-                            movie_title = match.group(1).strip()
-                            if movie_title not in movies:
-                                movies.append(movie_title)
-                                logger.info(f"    ✓ Found movie from h3: {movie_title}")
+            logger.info(f"  Found {len(relevant_h3s)} h3 headers in section")
 
-                current = current.find_next_sibling()
+            # Check h3 headers for movie titles
+            for h3 in relevant_h3s:
+                h3_text = h3.get_text(separator=' ', strip=True)
+                # Remove [edit] links
+                h3_text = re.sub(r'\[edit\]', '', h3_text).strip()
 
-            logger.info(f"  Checked {h3_count} h3 headers")
+                # Check if this h3 is a movie title (has a year and Star Trek)
+                if 'Star Trek' in h3_text and re.search(r'\((\d{4})\)', h3_text):
+                    # Extract title with year
+                    match = re.search(r'(Star Trek[^(]*\(\d{4}\))', h3_text)
+                    if match:
+                        movie_title = match.group(1).strip()
+                        if movie_title not in movies:
+                            movies.append(movie_title)
+                            logger.info(f"    ✓ Found movie from h3: {movie_title}")
 
-        # If no movies found from headers, try other methods
-        if not movies:
-            logger.info(f"  No movies in headers, trying lists/tables")
+        # Also look for tables (Wikipedia sometimes lists films in tables)
+        if not movies or header.name == 'h2':
+            # Get all tables that come after this header
+            all_tables = header.find_all_next('table')
 
-            # Try to find parent container
-            parent = header.find_parent(['section', 'div'])
+            # Filter to tables before the next h2
+            if header.name == 'h2':
+                next_h2 = header.find_next('h2')
+                relevant_tables = []
 
-            if parent:
-                # Search for lists within the parent
-                lists = parent.find_all(['ul', 'ol'])
-                logger.info(f"  Found {len(lists)} lists in parent container")
+                for table in all_tables:
+                    # Simple position check - if we can find next_h2 in table's next siblings, table comes before it
+                    if next_h2:
+                        if next_h2 in list(table.find_all_next('h2')):
+                            relevant_tables.append(table)
+                        else:
+                            break
+                    else:
+                        relevant_tables.append(table)
 
-                for list_elem in lists:
-                    for li in list_elem.find_all('li', recursive=False):
-                        movie = self._extract_movie_from_list_item(li)
-                        if movie and movie not in movies:
-                            movies.append(movie)
-                            logger.info(f"    ✓ Found movie from list: {movie}")
+                logger.info(f"  Found {len(relevant_tables)} tables in section")
 
-                # Search for tables within the parent
-                tables = parent.find_all('table')
-                logger.info(f"  Found {len(tables)} tables in parent container")
-
-                for table in tables:
-                    for row in table.find_all('tr'):
-                        cells = row.find_all(['td', 'th'])
-                        for cell in cells:
-                            for link in cell.find_all('a'):
-                                link_text = link.get_text(separator=' ', strip=True)
-                                if 'Star Trek' in link_text:
-                                    cell_text = cell.get_text(separator=' ', strip=True)
-                                    year_match = re.search(r'\((\d{4})\)', cell_text)
-                                    if year_match:
-                                        movie_title = f"{link_text} ({year_match.group(1)})"
-                                        if movie_title not in movies:
-                                            movies.append(movie_title)
-                                            logger.info(f"    ✓ Found movie from table: {movie_title}")
+                for table in relevant_tables:
+                    # Look for "wikitable" class (common Wikipedia table)
+                    if 'wikitable' in table.get('class', []):
+                        logger.info(f"    Checking wikitable for movies")
+                        for row in table.find_all('tr'):
+                            cells = row.find_all(['td', 'th'])
+                            for cell in cells:
+                                # Look for links with "Star Trek" in them
+                                for link in cell.find_all('a'):
+                                    link_text = link.get_text(separator=' ', strip=True)
+                                    if 'Star Trek' in link_text:
+                                        # Look for year in the same row
+                                        row_text = row.get_text(separator=' ', strip=True)
+                                        year_match = re.search(r'\((\d{4})\)', row_text)
+                                        if year_match:
+                                            movie_title = f"{link_text} ({year_match.group(1)})"
+                                            if movie_title not in movies:
+                                                movies.append(movie_title)
+                                                logger.info(f"    ✓ Found movie from table: {movie_title}")
 
         return movies
 
