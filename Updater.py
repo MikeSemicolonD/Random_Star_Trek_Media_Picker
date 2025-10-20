@@ -636,8 +636,11 @@ def main():
         with open("README.md", "r", encoding='utf-8') as file:
             readme = file.read()
 
-        start_index = readme.index('Data Last Updated: ')
-        readme = readme[:start_index] + 'Data Last Updated: <strong>' + datetime.now().strftime("%B %d, %Y") + '</strong>\n</div>\n'
+        # Find and replace the date inside <strong id="date">...</strong>
+        # This preserves the id attribute and surrounding structure
+        date_pattern = r'(<strong id="date">)[^<]+(</strong>)'
+        new_date = datetime.now().strftime("%B %d, %Y")
+        readme = re.sub(date_pattern, r'\g<1>' + new_date + r'\g<2>', readme)
 
         with open("README.md", "w", encoding='utf-8') as file:
             file.write(readme)
