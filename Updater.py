@@ -293,7 +293,9 @@ class MovieParser:
 
             if movies:
                 self.movies_by_era[header_text] = movies
-                logger.info(f"  Found {len(movies)} movies in this era")
+                logger.info(f"  ✓ Found {len(movies)} movies in this era")
+            else:
+                logger.warning(f"  ✗ No movies found in section '{header_text}'")
 
         return self.movies_by_era
 
@@ -337,26 +339,53 @@ class MovieParser:
         """
         movies = []
 
-        # Get the parent section
-        section = header.find_next_sibling()
+        # Collect all content between this header and the next header of same/higher level
+        content_elements = []
+        current = header.find_next_sibling()
 
-        # Look through siblings until we hit another header
-        while section and section.name not in ['h1', 'h2', 'h3']:
-            # Look for list items
-            if section.name in ['ul', 'ol']:
-                for li in section.find_all('li', recursive=False):
+        while current:
+            # Stop at the next header of the same or higher level
+            if current.name in ['h2', 'h3']:
+                # For h3, only stop if original was h3
+                # For h2, always stop
+                if current.name == 'h2' or header.name == 'h3':
+                    break
+
+            content_elements.append(current)
+            current = current.find_next_sibling()
+
+        logger.info(f"  Scanning {len(content_elements)} elements in section")
+
+        # Look for movies in all the collected content
+        for element in content_elements:
+            # Check lists
+            lists = element.find_all(['ul', 'ol']) if element.name not in ['ul', 'ol'] else [element]
+
+            for list_elem in lists:
+                for li in list_elem.find_all('li', recursive=True):
                     movie = self._extract_movie_from_list_item(li)
-                    if movie:
+                    if movie and movie not in movies:
                         movies.append(movie)
+                        logger.info(f"    ✓ Found movie: {movie}")
 
-            # Also check if this section contains lists
-            for list_elem in section.find_all(['ul', 'ol'], recursive=True):
-                for li in list_elem.find_all('li', recursive=False):
-                    movie = self._extract_movie_from_list_item(li)
-                    if movie and movie not in movies:  # Avoid duplicates
-                        movies.append(movie)
-
-            section = section.find_next_sibling()
+            # Also check for movies in tables (Wikipedia sometimes uses tables)
+            tables = element.find_all('table')
+            for table in tables:
+                for row in table.find_all('tr'):
+                    cells = row.find_all(['td', 'th'])
+                    for cell in cells:
+                        # Look for italic links (movie titles are often italicized)
+                        for link in cell.find_all('a'):
+                            link_text = link.get_text(strip=True)
+                            if 'Star Trek' in link_text:
+                                # Try to find year in the same cell or nearby
+                                cell_text = cell.get_text(strip=True)
+                                year_match = re.search(r'\((\d{4})\)', cell_text)
+                                if year_match:
+                                    movie_title = f"{link_text} ({year_match.group(1)})"
+                                    if movie_title not in movies:
+                                        movies.append(movie_title)
+                                        logger.info(f"    ✓ Found movie from table: {movie_title}")
 
         return movies
 
@@ -364,6 +393,19 @@ class MovieParser:
         """
         Extract a movie title from a list item
         """
+        # First, try to get the movie from the link (most reliable)
+        for link in li.find_all('a'):
+            link_text = link.get_text(strip=True)
+            if 'Star Trek' in link_text:
+                # Look for year in the list item text
+                li_text = li.get_text(strip=True)
+                year_match = re.search(r'\((\d{4})\)', li_text)
+                if year_match:
+                    # Clean up the link text
+                    link_text = re.sub(r'\[\d+\]', '', link_text).strip()
+                    return f"{link_text} ({year_match.group(1)})"
+
+        # Fallback: try to extract from the full text
         text = li.get_text(strip=True)
 
         # Remove citations
@@ -374,14 +416,13 @@ class MovieParser:
         if not re.search(r'\(\d{4}\)', text):
             return None
 
-        # Should start with "Star Trek" (most movies do)
-        if not text.startswith('Star Trek'):
+        # Look for "Star Trek" anywhere in the text
+        if 'Star Trek' not in text:
             return None
 
-        # Extract just the movie title with year
-        # Format is usually: "Star Trek: Movie Title (2009) - description"
-        # We want: "Star Trek: Movie Title (2009)"
-        match = re.match(r'(Star Trek[^(]*\(\d{4}\))', text)
+        # Extract the movie title with year
+        # Try to find "Star Trek..." followed by a year
+        match = re.search(r'(Star Trek[^(]*\(\d{4}\))', text)
         if match:
             return match.group(1).strip()
 
