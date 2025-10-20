@@ -277,7 +277,8 @@ class MovieParser:
         headers = soup.find_all(['h2', 'h3'])
 
         for header in headers:
-            header_text = header.get_text(strip=True)
+            # Get text with proper spacing between elements
+            header_text = header.get_text(separator=' ', strip=True)
             # Remove [edit] links
             header_text = re.sub(r'\[edit\]', '', header_text).strip()
 
@@ -339,53 +340,88 @@ class MovieParser:
         """
         movies = []
 
-        # Collect all content between this header and the next header of same/higher level
-        content_elements = []
-        current = header.find_next_sibling()
+        # Wikipedia often wraps section content in a div
+        # Try to find the parent section/div first
+        parent = header.find_parent(['section', 'div'])
 
-        while current:
-            # Stop at the next header of the same or higher level
-            if current.name in ['h2', 'h3']:
-                # For h3, only stop if original was h3
-                # For h2, always stop
-                if current.name == 'h2' or header.name == 'h3':
-                    break
+        if parent:
+            # Look for content within the parent section
+            logger.info(f"  Found parent container: {parent.name}")
 
-            content_elements.append(current)
-            current = current.find_next_sibling()
-
-        logger.info(f"  Scanning {len(content_elements)} elements in section")
-
-        # Look for movies in all the collected content
-        for element in content_elements:
-            # Check lists
-            lists = element.find_all(['ul', 'ol']) if element.name not in ['ul', 'ol'] else [element]
+            # Search for lists within the parent
+            lists = parent.find_all(['ul', 'ol'])
+            logger.info(f"  Found {len(lists)} lists in parent container")
 
             for list_elem in lists:
-                for li in list_elem.find_all('li', recursive=True):
+                for li in list_elem.find_all('li', recursive=False):
                     movie = self._extract_movie_from_list_item(li)
                     if movie and movie not in movies:
                         movies.append(movie)
                         logger.info(f"    ✓ Found movie: {movie}")
 
-            # Also check for movies in tables (Wikipedia sometimes uses tables)
-            tables = element.find_all('table')
+            # Search for tables within the parent
+            tables = parent.find_all('table')
+            logger.info(f"  Found {len(tables)} tables in parent container")
+
             for table in tables:
                 for row in table.find_all('tr'):
                     cells = row.find_all(['td', 'th'])
                     for cell in cells:
-                        # Look for italic links (movie titles are often italicized)
                         for link in cell.find_all('a'):
-                            link_text = link.get_text(strip=True)
+                            link_text = link.get_text(separator=' ', strip=True)
                             if 'Star Trek' in link_text:
-                                # Try to find year in the same cell or nearby
-                                cell_text = cell.get_text(strip=True)
+                                cell_text = cell.get_text(separator=' ', strip=True)
                                 year_match = re.search(r'\((\d{4})\)', cell_text)
                                 if year_match:
                                     movie_title = f"{link_text} ({year_match.group(1)})"
                                     if movie_title not in movies:
                                         movies.append(movie_title)
                                         logger.info(f"    ✓ Found movie from table: {movie_title}")
+
+        # Fallback: check direct siblings
+        if not movies:
+            logger.info(f"  No parent container or no movies found, checking siblings")
+            content_elements = []
+            current = header.find_next_sibling()
+
+            while current:
+                # Stop at the next header of the same or higher level
+                if current.name in ['h2', 'h3']:
+                    if current.name == 'h2' or header.name == 'h3':
+                        break
+
+                content_elements.append(current)
+                current = current.find_next_sibling()
+
+            logger.info(f"  Found {len(content_elements)} sibling elements")
+
+            for element in content_elements:
+                # Check lists
+                lists = element.find_all(['ul', 'ol']) if element.name not in ['ul', 'ol'] else [element]
+
+                for list_elem in lists:
+                    for li in list_elem.find_all('li', recursive=True):
+                        movie = self._extract_movie_from_list_item(li)
+                        if movie and movie not in movies:
+                            movies.append(movie)
+                            logger.info(f"    ✓ Found movie: {movie}")
+
+                # Check tables
+                tables = element.find_all('table')
+                for table in tables:
+                    for row in table.find_all('tr'):
+                        cells = row.find_all(['td', 'th'])
+                        for cell in cells:
+                            for link in cell.find_all('a'):
+                                link_text = link.get_text(separator=' ', strip=True)
+                                if 'Star Trek' in link_text:
+                                    cell_text = cell.get_text(separator=' ', strip=True)
+                                    year_match = re.search(r'\((\d{4})\)', cell_text)
+                                    if year_match:
+                                        movie_title = f"{link_text} ({year_match.group(1)})"
+                                        if movie_title not in movies:
+                                            movies.append(movie_title)
+                                            logger.info(f"    ✓ Found movie from table: {movie_title}")
 
         return movies
 
@@ -395,10 +431,10 @@ class MovieParser:
         """
         # First, try to get the movie from the link (most reliable)
         for link in li.find_all('a'):
-            link_text = link.get_text(strip=True)
+            link_text = link.get_text(separator=' ', strip=True)
             if 'Star Trek' in link_text:
                 # Look for year in the list item text
-                li_text = li.get_text(strip=True)
+                li_text = li.get_text(separator=' ', strip=True)
                 year_match = re.search(r'\((\d{4})\)', li_text)
                 if year_match:
                     # Clean up the link text
@@ -406,7 +442,7 @@ class MovieParser:
                     return f"{link_text} ({year_match.group(1)})"
 
         # Fallback: try to extract from the full text
-        text = li.get_text(strip=True)
+        text = li.get_text(separator=' ', strip=True)
 
         # Remove citations
         text = re.sub(r'\[\d+\]', '', text)
