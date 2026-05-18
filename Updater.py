@@ -1,507 +1,311 @@
-import wikipedia
-from html.parser import HTMLParser
+"""Updater for the Random Star Trek Media Picker.
+
+Pulls episode and film data from Wikipedia's MediaWiki API as raw *wikitext*
+and parses the {{Episode list}} templates and section headings. Wikitext
+templates expose data as named parameters, so a single code path works for
+every show -- no per-show, per-table HTML scraping.
+
+Output is written to data.json; the picker loads that file at startup. The
+updater never edits StarTrekMediaPicker.py, so a bad scrape cannot corrupt the
+program logic. Results are validated before anything is written.
+
+Requires: mwparserfromhell  (everything else is the standard library)
+"""
+
+import json
+import os
+import re
+import sys
+import time
+import urllib.parse
+import urllib.request
 from datetime import datetime
 
-class MovieHTMLParser(HTMLParser):
+import mwparserfromhell
+from mwparserfromhell.nodes import Heading, Template
 
-    parsedData = []
-    currentData = ''
-    
-    inHeader = False
-    inLink = False
-    isList = False
-    isItem = False
+API = "https://en.wikipedia.org/w/api.php"
+USER_AGENT = (
+    "StarTrekMediaPicker-Updater/2.0 "
+    "(https://github.com/legoguy217/StarTrekMediaPicker)"
+)
 
-    skip = False
-    
-    def handle_starttag(self, tag, attrs):
-        if tag == 'a':
-            self.inLink = True
-        elif tag == 'li':
-            self.isItem = True
-        elif tag == 'ul':
-            self.isList = True
-        elif tag == 'h2' or tag == 'h3':
-            self.inHeader = True
-            
-        for attr in attrs:
-            if attr[0] == 'class' and (attr[1] == 'mw-editsection' or attr[1] == 'mw-editsection-bracket'):
-                self.skip = True
-        #print("Encountered a start tag:", tag)
+HERE = os.path.dirname(os.path.abspath(__file__))
+DATA_FILE = os.path.join(HERE, "data.json")
+README_FILE = os.path.join(HERE, "README.md")
 
-    def handle_endtag(self, tag):
-        if tag == 'a':
-            self.inLink = False
-        elif tag == 'li':
-            self.isItem = False
-        elif tag == 'ul':
-            self.isList = False
-        elif tag == 'h2' or tag == 'h3':
-            self.inHeader = False
+# Each TV series: (menu label, Wikipedia "List of ... episodes" page title).
+# Adding a new show is a single line here -- no parser changes needed.
+SERIES = [
+    ("The Original Series", "List of Star Trek: The Original Series episodes"),
+    ("The Animated Series", "List of Star Trek: The Animated Series episodes"),
+    ("The Next Generation", "List of Star Trek: The Next Generation episodes"),
+    ("Deep Space Nine", "List of Star Trek: Deep Space Nine episodes"),
+    ("Voyager", "List of Star Trek: Voyager episodes"),
+    ("Enterprise", "List of Star Trek: Enterprise episodes"),
+    ("Discovery", "List of Star Trek: Discovery episodes"),
+    ("Short Treks", "List of Star Trek: Short Treks episodes"),
+    ("Picard", "List of Star Trek: Picard episodes"),
+    ("Lower Decks", "List of Star Trek: Lower Decks episodes"),
+    ("Prodigy", "List of Star Trek: Prodigy episodes"),
+    ("Strange New Worlds", "List of Star Trek: Strange New Worlds episodes"),
+]
 
-        if not self.inHeader and not self.inLink and not self.isList and not self.isItem:
-            if len(self.currentData) != 0:
-                self.parsedData.append(self.currentData)
-                self.currentData = ''
-        # print("Encountered an end tag :", tag)
+FILM_PAGE = "Star Trek (film series)"
 
-    def handle_data(self, data):
-        if self.skip or data == 'edit':
-            self.skip = False
-            return
-        
-        if self.inHeader:
-            self.currentData += data
-            #print("Encountered some data  :", data)
-            
-class TVHTMLParser(HTMLParser):
+# data.json series labels are prefixed with the franchise name.
+SERIES_LABEL_PREFIX = "Star Trek: "
 
-    parsedData = []
-    currentData = ''
-    
-    inHeader = False
-    inLink = False
-    isList = False
-    isItem = False
-    isItalics = False
+# A title may end with footnote markers like "[a]" or "[1]" -- strip them.
+_FOOTNOTE = re.compile(r"\s*\[[a-z0-9]+\]\s*$", re.IGNORECASE)
+_SEASON_NUM = re.compile(r"season\s+(\d+)", re.IGNORECASE)
+_YEAR = re.compile(r"\(\d{4}\)")
 
-    skip = False
-    
-    targetItalicsText = 'Star Trek'
-    inTargetHeader = False
-    
-    def handle_starttag(self, tag, attrs):
-        if tag == 'a':
-            self.inLink = True
-        elif tag == 'li':
-            self.isItem = True
-        elif tag == 'ul':
-            self.isList = True
-        elif tag == 'i':
-            self.isItalics = True
-        elif tag == 'h1' or tag == 'h2' or tag == 'h3':
-            self.inHeader = True
-            
-        for attr in attrs:
-            if attr[0] == 'class' and (attr[1] == 'mw-editsection' or attr[1] == 'mw-editsection-bracket'):
-                self.skip = True
-        #print("Encountered a start tag:", tag)
 
-    def handle_endtag(self, tag):
-        if tag == 'a':
-            self.inLink = False
-        elif tag == 'li':
-            self.isItem = False
-        elif tag == 'ul':
-            self.isList = False
-        elif tag == 'i':
-            self.isItalics = False
-        elif tag == 'h2' or tag == 'h3':
-            self.inHeader = False
+def fetch_wikitext(page):
+    """Return the raw wikitext of a Wikipedia page (follows redirects)."""
+    params = {
+        "action": "parse",
+        "page": page,
+        "prop": "wikitext",
+        "redirects": 1,
+        "format": "json",
+        "formatversion": 2,
+    }
+    url = API + "?" + urllib.parse.urlencode(params)
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
 
-        if self.isList and not self.isItem:
-            if len(self.currentData) != 0:
-                self.parsedData.append(self.currentData)
-                self.currentData = ''
-        # print("Encountered an end tag :", tag)
+    last_error = None
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+            if "error" in data:
+                raise RuntimeError(
+                    "API error for %r: %s"
+                    % (page, data["error"].get("info", "unknown"))
+                )
+            return data["parse"]["wikitext"]
+        except Exception as err:  # noqa: BLE001 - retry any transient failure
+            last_error = err
+            time.sleep(2 * (attempt + 1))
+    raise RuntimeError("failed to fetch %r: %s" % (page, last_error))
 
-    def handle_data(self, data):
-        if self.skip or data == 'edit':
-            self.skip = False
-            return
-        
-        if self.isList and self.isItem and self.inTargetHeader:
-            self.currentData += data
-            #print("Encountered some data  :", data)
 
-        if not self.isList and self.isItalics:
-            #print("Encountered some data  :", data)
-            if data == self.targetItalicsText:
-                self.inTargetHeader = True
+def clean_text(raw):
+    """Reduce a wikitext fragment to plain display text.
+
+    Strips <ref> citations, wikilinks (keeping the visible label), italics,
+    bold, HTML entities, non-breaking spaces and trailing footnote markers.
+    """
+    code = mwparserfromhell.parse(str(raw))
+    for tag in code.filter_tags():
+        if str(tag.tag).strip().lower() == "ref":
+            try:
+                code.remove(tag)
+            except ValueError:
+                pass
+    text = code.strip_code(normalize=True, collapse=True)
+    text = text.replace("\xa0", " ").replace("\u200b", "")
+    text = re.sub(r"\s+", " ", text).strip()
+    text = text.strip("\"“”")
+    while _FOOTNOTE.search(text):
+        text = _FOOTNOTE.sub("", text).strip()
+    return text
+
+
+def template_param(template, name):
+    """Return a template parameter's value, or '' if it is absent."""
+    try:
+        return template.get(name).value
+    except ValueError:
+        return ""
+
+
+def episode_list_templates(code):
+    """Yield every {{Episode list}} (and /sublist variant) template in code."""
+    for template in code.filter_templates():
+        name = str(template.name).strip().lower()
+        if name == "episode list" or name.startswith("episode list/"):
+            yield template
+
+
+def parse_show(label, page):
+    """Fetch and parse one TV series; return a list of 'S#E## Title' strings.
+
+    Handles both layouts: episodes listed inline on the page, and episodes
+    transcluded from per-season articles via {{:Star Trek: <Show> season N}}.
+    """
+    print("  fetching %s" % page)
+    code = mwparserfromhell.parse(fetch_wikitext(page))
+
+    seasons = {}  # season number -> ordered list of episode titles
+    current_season = 1
+
+    # Walk headings and templates in document order. A recursive walk is
+    # required: on some pages the episode tables are nested inside other
+    # markup, so a top-level-only walk would miss them.
+    for node in code.ifilter(recursive=True):
+        if isinstance(node, Heading):
+            heading = clean_text(node.title)
+            match = _SEASON_NUM.search(heading)
+            if match:
+                current_season = int(match.group(1))
+            elif "pilot" in heading.lower():
+                current_season = 0
+        elif isinstance(node, Template):
+            name = str(node.name).strip()
+            lower = name.lower()
+            # {{:Star Trek: <Show> season N}} -> transcluded season article
+            if name.startswith(":") and _SEASON_NUM.search(lower):
+                season_no = int(_SEASON_NUM.search(lower).group(1))
+                print("    season %d <- %s" % (season_no, name[1:]))
+                sub = mwparserfromhell.parse(fetch_wikitext(name[1:]))
+                bucket = seasons.setdefault(season_no, [])
+                for episode in episode_list_templates(sub):
+                    title = clean_text(template_param(episode, "Title"))
+                    if title:
+                        bucket.append(title)
+                time.sleep(0.1)
+            # Episodes listed directly on this page
+            elif lower == "episode list" or lower.startswith("episode list/"):
+                title = clean_text(template_param(node, "Title"))
+                if title:
+                    seasons.setdefault(current_season, []).append(title)
+
+    episodes = []
+    for season_no in sorted(seasons):
+        for index, title in enumerate(seasons[season_no], start=1):
+            episodes.append("S%dE%02d %s" % (season_no, index, title))
+    print("  -> %s: %d episodes across %d season(s)"
+          % (label, len(episodes), len(seasons)))
+    return episodes
+
+
+def parse_films(page):
+    """Parse the film-series page; return [{'label':.., 'films':[..]}, ...].
+
+    Films are pure heading structure: '== <Era> films ==' contains one
+    '=== <Title> (YYYY) ===' heading per released film.
+    """
+    print("  fetching %s" % page)
+    code = mwparserfromhell.parse(fetch_wikitext(page))
+
+    eras = []
+    current_films = None  # the 'films' list of the era currently being read
+    for node in code.nodes:
+        if not isinstance(node, Heading):
+            continue
+        text = clean_text(node.title)
+        if node.level == 2:
+            if "film" in text.lower():
+                current_films = []
+                eras.append({"label": text, "films": current_films})
             else:
-                self.inTargetHeader = False
-            
-                
-class HTMLTableParser(HTMLParser):
+                current_films = None  # left films section (Reception, Future)
+        elif node.level == 3 and _YEAR.search(text) and current_films is not None:
+            current_films.append(text)
 
-    parsedData = []
-    currentRow = []
-    currentData = ''
-    
-    inHeader = False
-    inLink = False
-    inTable = False
-    inRow = False
-    inDivider = False
-    inTableHeader = False
-
-    skip = False
-
-    targetHeader = 'Episodes'
-    inTargetHeader = False
-
-    foundHorizontalRule = False
-    
-    def handle_starttag(self, tag, attrs):
-        if tag == 'a':
-            self.inLink = True
-        elif tag == 'tbody':
-            self.inTable = True
-        elif tag == 'tr':
-            self.inRow = True
-        elif tag == 'th':
-            self.inTableHeader = True
-        elif tag == 'td':
-            self.inDivider = True
-        elif tag == 'hr':
-            self.foundHorizontalRule = True
-        elif tag == 'h2':
-            self.inHeader = True
-            self.inTargetHeader = False
-
-    def handle_endtag(self, tag):
-        if tag == 'a':
-            self.inLink = False
-        elif tag == 'tbody':
-            self.inTable = False
-        elif tag == 'tr':
-            self.inRow = False
-        elif tag == 'th':
-            self.inTableHeader = False
-        elif tag == 'td':
-            self.inDivider = False
-        elif tag == 'h2':
-            self.inHeader = False
-
-        if self.inRow and not self.inDivider and not self.inTableHeader and not self.inLink:
-            if len(self.currentData) != 0:
-                self.currentRow.append(self.currentData)
-                self.currentData = ''
-
-        if not self.inRow and self.inTable:
-            if len(self.currentRow) != 0:
-                self.parsedData.append(self.currentRow)
-                self.currentRow = []
-        # print("Encountered an end tag :", tag)
-
-    def handle_data(self, data):
-        if self.skip or data == 'edit' or data.startswith('[') or data.endswith(']'):
-            self.skip = False
-            return
-        
-        if self.inTable and self.inRow and (self.inTableHeader or self.inDivider or self.inLink) and (len(self.targetHeader) == 0 or (len(self.targetHeader) != 0 and self.inTargetHeader)):
-            
-            # Usually implies that there's multiple rows (Like if an episode is treated as two)
-            if(self.foundHorizontalRule):
-                self.currentData += '~'
-                self.foundHorizontalRule = False
-                
-            self.currentData += data
-            #print("Encountered some data  :", data)
-        
-        if not self.inTable and self.inHeader:
-            if data == self.targetHeader:
-                self.inTargetHeader = True
-
-try:
-
-    TVShows = {}
-    Movies = {}
-
-    rawShows = []
-    rawMovies = []
-
-    movieParser = MovieHTMLParser()
-    episodeParser = TVHTMLParser()
-    tableParser = HTMLTableParser()
-    
-    # Get direct references to the episode & films lists
-    for mediaLists in list(filter(lambda x: 'star trek films' in x.lower() or 'star trek episodes' in x.lower(), wikipedia.page("Star Trek", auto_suggest=False).links)):
-        # Get & Parse HTML pages for their lists
-        print('Getting '+mediaLists)
-        if 'episode' in mediaLists:
-            episodeParser.feed(wikipedia.page(mediaLists, auto_suggest=False).html())
-            for episodeLists in list(filter(lambda x: 'episodes' in x.lower() and 'list' in x.lower(), episodeParser.parsedData)):
-                print('parsing '+episodeLists)
-                tableParser.feed(wikipedia.page(episodeLists, auto_suggest=False).html())
-                rawShows.append({ episodeLists[episodeLists.index(':')+2:episodeLists.index('episodes')-1] : tableParser.parsedData })
-                tableParser.parsedData = []
-        else:
-            print('parsing '+mediaLists)
-            movieParser.feed(wikipedia.page(mediaLists, auto_suggest=False).html())
-            rawMovies = movieParser.parsedData
+    eras = [era for era in eras if era["films"]]
+    for era in eras:
+        print("  -> %s: %d film(s)" % (era["label"], len(era["films"])))
+    return eras
 
 
-    # Parse every movie
-    categorie = ''
-    movieList = []
-    for movieKey in rawMovies:
-        if '(' in movieKey and 'film' not in movieKey and len(categorie) != 0:
-            movieList.append(movieKey)
-        else:
-            if len(movieList) != 0:
-                Movies[categorie] = movieList
-                movieList = []
-            categorie = movieKey
+def validate(series, movies):
+    """Return a list of human-readable problems with the scraped data."""
+    errors = []
 
-            
-    # Parse every episode from every series and store them into a key value pair where the key is the show name and the value is the array of all episodes
-    for showKeys in rawShows:
-        #print(showKeys)
-        for shows, showEpisodes in showKeys.items():
-            #print(shows)
-            #print(showEpisodes)
-            
-            numberInFirstCol = False
-            tableLength = 0
+    if len(series) < 10:
+        errors.append("expected at least 10 TV series, got %d" % len(series))
 
-            season = []
-            
-            seasonNo = 0
-            partNo = 0
-                    
-            episodeNoOverall = 0
-            episodeNoInSeason = 1
-            
-            for episodeRow in showEpisodes:
-                #print(episodeRow)
-                
-                # Skip if the first row doen't have 'Title' or 'No.' in the first table header use that to determine how many columns to expect
-                if 'title' in episodeRow[0].lower() or 'no.' in episodeRow[0].lower():
-                    numberInFirstCol = 'no.' in episodeRow[0].lower()
-                    tableLength = len(episodeRow)
-                elif tableLength is len(episodeRow):
+    total_episodes = 0
+    for show in series:
+        if not show["episodes"]:
+            errors.append("series %r has no episodes" % show["label"])
+        for episode in show["episodes"]:
+            parts = episode.split(" ", 1)
+            if len(parts) < 2 or not parts[1].strip():
+                errors.append(
+                    "blank episode title in %r: %r" % (show["label"], episode)
+                )
+        total_episodes += len(show["episodes"])
 
-                    episodeName = ''
-                    
-                    insertAsAnotherEpisode = False
-                    dividerIndex = 0
-                    
-                    noInSeasonHasDivider = False
-                    noInSeasonDividerIndex = 0
-                    
-                    if numberInFirstCol:
+    if not movies:
+        errors.append("no film eras found")
+    for era in movies:
+        if not era["films"]:
+            errors.append("film era %r is empty" % era["label"])
 
-                        if episodeRow[1][0].isnumeric():
-                            # some episodes are counted as multiple (by using an <hr> tag or '-')
-                            if '~' in episodeRow[0]: # we substitute an <hr> tag for a tilde when parsing
-                                insertAsAnotherEpisode = True
-                                dividerIndex = episodeRow[0].index('~')
-                            elif '–' in episodeRow[0]:
-                                insertAsAnotherEpisode = True
-                                dividerIndex = episodeRow[0].index('–')
-                            elif '-' in episodeRow[0]:
-                                insertAsAnotherEpisode = True
-                                dividerIndex = episodeRow[0].index('-')
+    # Guard against a partial scrape silently shrinking the catalogue.
+    if os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, encoding="utf-8") as handle:
+                previous = json.load(handle)
+        except (OSError, ValueError):
+            previous = None
+        if previous:
+            prev_total = sum(
+                len(s.get("episodes", [])) for s in previous.get("series", [])
+            )
+            if prev_total and total_episodes < prev_total * 0.9:
+                errors.append(
+                    "episode count dropped sharply: %d -> %d (>10%% loss)"
+                    % (prev_total, total_episodes)
+                )
 
-                            # sometimes the No. Overall has a redundant divider
-                            if '~' in episodeRow[1]: # we substitute an <hr> tag for a tilde when parsing
-                                noInSeasonHasDivider = True
-                                noInSeasonDividerIndex = episodeRow[1].index('~')
-                            elif '–' in episodeRow[1]:
-                                noInSeasonHasDivider = True
-                                noInSeasonDividerIndex = episodeRow[1].index('–')
-                            elif '-' in episodeRow[1]:
-                                noInSeasonHasDivider = True
-                                noInSeasonDividerIndex = episodeRow[1].index('-')
-
-                            if noInSeasonHasDivider:
-                                episodeNoInSeason = int(episodeRow[1][:noInSeasonDividerIndex]) # converting to ints might be an issue if season numbers have decimals
-                            else:
-                                episodeNoInSeason = int(episodeRow[1])
+    return errors
 
 
-                            if insertAsAnotherEpisode:
-                                episodeNoOverall = int(episodeRow[0][:dividerIndex]) # converting to ints might be an issue if episode numbers have decimals
-                            else:
-                                episodeNoOverall = int(episodeRow[0])
+def update_readme(stamp):
+    """Refresh the 'Data Last Updated' date in README.md, preserving markup."""
+    if not os.path.exists(README_FILE):
+        return
+    with open(README_FILE, encoding="utf-8") as handle:
+        readme = handle.read()
+    new_readme = re.sub(
+        r'<strong id="date">.*?</strong>',
+        '<strong id="date">%s</strong>' % stamp,
+        readme,
+    )
+    if new_readme != readme:
+        with open(README_FILE, "w", encoding="utf-8") as handle:
+            handle.write(new_readme)
+        print("Updated README.md date stamp")
 
-                            episodeName = episodeRow[2]
-                        else:
-                            # if there's only one number column
-                            if '~' in episodeRow[0]: # we substitute an <hr> tag for a tilde when parsing
-                                insertAsAnotherEpisode = True
-                                noInSeasonDividerIndex = episodeRow[0].index('~')
-                            elif '–' in episodeRow[0]:
-                                insertAsAnotherEpisode = True
-                                noInSeasonDividerIndex = episodeRow[0].index('–')
-                            elif '-' in episodeRow[0]:
-                                insertAsAnotherEpisode = True
-                                noInSeasonDividerIndex = episodeRow[0].index('-')
-                                
-                            if insertAsAnotherEpisode:
-                                episodeNoInSeason = int(episodeRow[0][:noInSeasonDividerIndex]) # converting to ints might be an issue if episode numbers have decimals
-                            else:
-                                episodeNoInSeason = int(episodeRow[0])
 
-                            seasonNo = 1; # a single 'no.' column indicates that there has only been one season
-                            
-                            episodeName = episodeRow[1]
-                    # if first column doesn't have a number then it's a pilot 'season' or 'season 0'
-                    else:
-                        episodeName = episodeRow[0]
+def main():
+    series = []
+    for label, page in SERIES:
+        series.append({"label": SERIES_LABEL_PREFIX + label,
+                       "episodes": parse_show(label, page)})
 
-                    #print(episodeName)
-                    
-                    # if this is a new season
-                    if episodeNoOverall >= episodeNoInSeason and episodeNoInSeason == 1:
-                        seasonNo=seasonNo+1;
+    movies = parse_films(FILM_PAGE)
 
-                    # string replacements
-                    #episodeName = episodeName.replace("\\","",5)
-                    episodeName = episodeName.replace("\'","",5)
-                    episodeName = episodeName.replace("\"","",6)
-                    episodeName = episodeName.replace("\xa0"," ",6)
+    errors = validate(series, movies)
+    if errors:
+        print("\nValidation failed -- data.json was NOT written:")
+        for error in errors:
+            print("  - %s" % error)
+        sys.exit(1)
 
-                    # account for splits in the table rows
-                    if insertAsAnotherEpisode:
-                        season.append("S"+str(seasonNo)+"E"+str(episodeNoInSeason).zfill(2)+" "+episodeName+" Part I")
-                        season.append("S"+str(seasonNo)+"E"+str(episodeNoInSeason+1).zfill(2)+" "+episodeName+" Part II")
-                        episodeNoInSeason = episodeNoInSeason+2
-                        episodeNoOverall = episodeNoOverall+2
-                    else:
-                        season.append("S"+str(seasonNo)+"E"+str(episodeNoInSeason).zfill(2)+" "+episodeName)
-                        episodeNoInSeason = episodeNoInSeason+1
-                        episodeNoOverall = episodeNoOverall+1
+    stamp = datetime.now().strftime("%B %d, %Y")
+    payload = {
+        "updated": stamp,
+        "series": series,
+        "movies": movies,
+    }
+    with open(DATA_FILE, "w", encoding="utf-8") as handle:
+        json.dump(payload, handle, ensure_ascii=False, indent=2)
+        handle.write("\n")
 
-            # when done add it to list of TVShows
-            if len(season) != 0:
-                TVShows[shows] = season
-                season = []
+    total = sum(len(show["episodes"]) for show in series)
+    films = sum(len(era["films"]) for era in movies)
+    print("\nWrote data.json: %d series / %d episodes, %d film eras / %d films"
+          % (len(series), total, len(movies), films))
 
-    # Debugging
+    update_readme(stamp)
 
-##    for show, episodes in TVShows.items():
-##        print(show)
-##        print(episodes)
-    
-##    for era, movies in Movies.items():
-##      print(era)
-##      print(movies)
-            
-    # Find in the python script where the arrays are and overwrite them
-    print('Reading script')
-    file = open("StarTrekMediaPicker.py", "r", encoding='utf-8')
-    script = file.read()
-    file.close()
 
-    # for each movie era -> movies and tv shows -> episode ((eras * movies) + (series * episodes)) 
-    for mediaType in [Movies, TVShows]:
-
-        mappingArray = []
-        isFilm = False
-        
-        for mediaName, media in mediaType.items():
-
-            mediaTypeName = ''
-            replacement = ''
-
-            if 'film' in mediaName:
-                mediaTypeName = 'movies'
-                isFilm = True
-            else:
-                mediaTypeName = 'episodes'
-                isFilm = False
-            
-            # Create shortening using key name
-            mediaArrayName = ''.join(list(filter(lambda x: x.isupper(), mediaName)))+mediaTypeName
-
-            # make sure we don't end up with duplicate array names
-            instanceCount = 1;
-            while mediaArrayName in mappingArray:
-                mediaArrayName = mediaArrayName+str(instanceCount)
-                instanceCount = instanceCount+1
-            
-            mappingArray.append(mediaArrayName)
-            
-            #print(mediaArrayName)
-            
-            # update script with new array if it doesn't exist
-            if mediaArrayName not in script:
-                
-                if isFilm:
-                    endIndex = script.index('Movies')+len('Movies')
-                else:
-                    endIndex = script.index('Episodes')+len('Episodes')
-                
-                script = script[:endIndex]+'\n\n'+mediaArrayName+' = []'+script[endIndex:]
-            
-            # update script with new array elements
-            if mediaArrayName in script:
-                startIndex = script.index(mediaArrayName)
-                endIndex = startIndex+script[startIndex:].index(']')
-
-                replacement += mediaArrayName+' = [\n'
-            
-                for mediaPeice in media:
-                    if 'TBD' in mediaPeice or 'TBA' in mediaPeice: # anything TBD/TBA is to be ignored
-                        continue
-                    
-                    replacement += '   \''+mediaPeice+'\',\n'
-
-                replacement += ']'
-                
-                script = script[:startIndex]+replacement+script[endIndex+1:]
-        
-        # update mapping array
-        mappingCount = 0
-        if isFilm:
-            startIndex = script.index('MovieMapping')
-            replacement = 'MovieMapping = {\n'
-        else:
-            startIndex = script.index('TVMapping')
-            replacement = 'TVMapping = {\n'
-             
-        endIndex = startIndex+script[startIndex:].index('}')
-        
-        for mapping in mappingArray:
-            replacement += '\t'+str(mappingCount)+' : '+mapping+',\n'
-            mappingCount = mappingCount+1
-             
-        replacement += '}'
-                
-        script = script[:startIndex]+replacement+script[endIndex+1:]
-
-    # update labels array
-
-    # Update labels for the movies
-    startIndex = script.index('movieSeries')
-    endIndex = startIndex+script[startIndex:].index(']')
-    replacement = 'movieSeries = [\n'
-    for era, movies in Movies.items():
-        replacement += '   \''+era+'\',\n'
-      
-    replacement += ']'
-    script = script[:startIndex]+replacement+script[endIndex+1:]
-
-    # Update labels for the tv shows
-    startIndex = script.index('series')
-    endIndex = startIndex+script[startIndex:].index(']')
-    replacement = 'series = [\n'
-    for show, episodes in TVShows.items():
-        replacement += '   \''+show+'\',\n'
-      
-    replacement += ']'
-    script = script[:startIndex]+replacement+script[endIndex+1:]
-
-    # Update the script
-    print('Writing to script')
-    file = open("StarTrekMediaPicker.py", "w", encoding='utf-8')
-    file.write(script)
-    file.close()
-    
-    # Update README
-    file = open("README.md", "r", encoding='utf-8')
-    readme = file.read()
-    file.close()
-    
-    startIndex = readme.index('Data Last Updated: ')
-    readme = readme[:startIndex]+'Data Last Updated: <strong>'+datetime.now().strftime("%B %d, %Y")+'</strong>\n</div>\n'
-    
-    file = open("README.md", "w", encoding='utf-8')
-    file.write(readme)
-    file.close()
-    
-except BaseException as err:
-    print(f"Unexpected {err=}, {type(err)=}")
-    raise
+if __name__ == "__main__":
+    main()

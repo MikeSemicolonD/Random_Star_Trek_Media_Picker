@@ -1,0 +1,25 @@
+{
+  "_comment": "Baseline for test.py, laid out like data.json: a 'series' list and a 'movies' list. Each series gives its per-season episode counts -- these are Wikipedia episode-table ROW counts, so a two-part episode counts once and totals run slightly under 'official' figures (this is the parser's defined behaviour). Each movie era gives its expected film 'count'. The baseline is a FLOOR: fewer than this fails the test (a regression); an exact match passes; more raises a passing notice telling you to update this file -- e.g. when a new episode airs or a new season/show/film appears.",
+
+  "series": [
+    {"label": "Star Trek: The Original Series", "seasons": {"0": 2, "1": 28, "2": 25, "3": 24}},
+    {"label": "Star Trek: The Animated Series", "seasons": {"1": 16, "2": 6}},
+    {"label": "Star Trek: The Next Generation", "seasons": {"1": 23, "2": 22, "3": 26, "4": 26, "5": 26, "6": 26, "7": 25}},
+    {"label": "Star Trek: Deep Space Nine", "seasons": {"1": 19, "2": 26, "3": 26, "4": 25, "5": 26, "6": 26, "7": 25}},
+    {"label": "Star Trek: Voyager", "seasons": {"1": 15, "2": 26, "3": 26, "4": 25, "5": 25, "6": 26, "7": 24}},
+    {"label": "Star Trek: Enterprise", "seasons": {"1": 25, "2": 26, "3": 24, "4": 21}},
+    {"label": "Star Trek: Discovery", "seasons": {"1": 15, "2": 13, "3": 12, "4": 13, "5": 10}},
+    {"label": "Star Trek: Short Treks", "seasons": {"1": 4, "2": 6}},
+    {"label": "Star Trek: Picard", "seasons": {"1": 9, "2": 10, "3": 10}},
+    {"label": "Star Trek: Lower Decks", "seasons": {"1": 10, "2": 10, "3": 10, "4": 10, "5": 10}},
+    {"label": "Star Trek: Prodigy", "seasons": {"1": 17, "2": 14}},
+    {"label": "Star Trek: Strange New Worlds", "seasons": {"1": 10, "2": 10, "3": 10, "4": 2}}
+  ],
+
+  "movies": [
+    {"label": "The Original Series films", "count": 6},
+    {"label": "The Next Generation films", "count": 4},
+    {"label": "Reboot (Kelvin Timeline) films", "count": 3},
+    {"label": "Television films", "count": 1}
+  ]
+}
