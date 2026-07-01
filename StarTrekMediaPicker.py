@@ -82,6 +82,9 @@ while(True):
 
     show = int(show)
     repeat = ''
+    # Seeded before the loop so the browser-search branch (repeat == 3), which
+    # skips the pick block and reuses the previous result, always has a value.
+    resultIsEpisode = False
     while(len(str(repeat)) == 0 or repeat == 1 or repeat == 3):
         result = ''
         if(repeat != 3):
