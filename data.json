@@ -1,5 +1,5 @@
 {
-  "updated": "July 01, 2026",
+  "updated": "August 01, 2026",
   "series": [
     {
       "label": "Star Trek: The Original Series",
@@ -984,7 +984,15 @@
         "S3E09 Terrarium",
         "S3E10 New Life and New Civilizations",
         "S4E01 Valles Marineris",
-        "S4E02 Griffin Incident"
+        "S4E02 The Griffin Incident",
+        "S4E03 Human Best Friend",
+        "S4E04 A Case of Chiaroscuro",
+        "S4E05 Level Five Transporter Accident",
+        "S4E06 Off-Hour",
+        "S4E07 Like Chronitons Through the Hourglass",
+        "S4E08 Orders of Magnitude",
+        "S4E09 Once La'An a Time",
+        "S4E10 Tomorrow's Enterprise"
       ]
     }
   ],
