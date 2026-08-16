@@ -13,7 +13,7 @@
     {"label": "Star Trek: Picard", "seasons": {"1": 9, "2": 10, "3": 10}},
     {"label": "Star Trek: Lower Decks", "seasons": {"1": 10, "2": 10, "3": 10, "4": 10, "5": 10}},
     {"label": "Star Trek: Prodigy", "seasons": {"1": 17, "2": 14}},
-    {"label": "Star Trek: Strange New Worlds", "seasons": {"1": 10, "2": 10, "3": 10, "4": 2}}
+    {"label": "Star Trek: Strange New Worlds", "seasons": {"1": 10, "2": 10, "3": 10, "4": 10}}
   ],
 
   "movies": [
