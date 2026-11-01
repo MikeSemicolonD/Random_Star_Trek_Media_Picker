@@ -122,6 +122,26 @@ def template_param(template, name):
         return ""
 
 
+def episode_titles(template):
+    """Return the episode title(s) in one {{Episode list}} row.
+
+    Multi-part episodes share a row with NumParts=N and either per-part
+    Title_1..Title_N or one shared Title (-> 'Title, Part I', 'Title, Part II').
+    """
+    title = clean_text(template_param(template, "Title"))
+    try:
+        parts = int(str(template_param(template, "NumParts")).strip() or 1)
+    except ValueError:
+        parts = 1
+    if parts < 2:
+        return [title] if title else []
+    titles = []
+    for n in range(1, parts + 1):
+        part = clean_text(template_param(template, "Title_%d" % n))
+        titles.append(part or "%s, Part %s" % (title, "I" * n if n < 4 else n))
+    return titles
+
+
 def episode_list_templates(code):
     """Yield every {{Episode list}} (and /sublist variant) template in code."""
     for template in code.filter_templates():
@@ -163,15 +183,12 @@ def parse_show(label, page):
                 sub = mwparserfromhell.parse(fetch_wikitext(name[1:]))
                 bucket = seasons.setdefault(season_no, [])
                 for episode in episode_list_templates(sub):
-                    title = clean_text(template_param(episode, "Title"))
-                    if title:
-                        bucket.append(title)
+                    bucket.extend(episode_titles(episode))
                 time.sleep(0.1)
             # Episodes listed directly on this page
             elif lower == "episode list" or lower.startswith("episode list/"):
-                title = clean_text(template_param(node, "Title"))
-                if title:
-                    seasons.setdefault(current_season, []).append(title)
+                seasons.setdefault(current_season, []).extend(
+                    episode_titles(node))
 
     episodes = []
     for season_no in sorted(seasons):

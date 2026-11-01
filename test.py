@@ -6,9 +6,10 @@ behave correctly. The tests fall into two groups:
   1. Structural invariants -- format, season contiguity, no duplicates, and
      no leftover scraping artifacts (wikilinks, refs, HTML entities, etc.).
   2. Ground truth -- a curated table of season and per-season episode counts.
-     Season counts are absolute facts; episode counts are Wikipedia
-     episode-table *row* counts (a two-part episode occupies one row), which
-     is the parser's defined behaviour.
+     Season counts are absolute facts; episode counts follow Wikipedia's
+     episode numbering (multi-part rows are expanded one entry per part).
+     Titles are never compared -- Wikipedia editors keep tweaking their
+     punctuation -- and film eras are matched by position, not heading.
 
 The ground truth is a BASELINE, not an exact snapshot:
 
@@ -61,7 +62,7 @@ try:
         for entry in _gt["series"]
     }
     # film era -> baseline film count.
-    FILM_GROUND_TRUTH = {era["label"]: era["count"] for era in _gt["movies"]}
+    FILM_GROUND_TRUTH = [era["count"] for era in _gt["movies"]]
 except (KeyError, AttributeError, TypeError, ValueError) as _gt_error:
     sys.exit("ground_truth.json has the wrong structure: %s" % _gt_error)
 
@@ -230,13 +231,16 @@ def test_films(data, results):
     results.check(not bad_format, "every film matches 'Title (YYYY)'",
                   "; ".join(bad_format[:3]))
 
-    for label, want in FILM_GROUND_TRUTH.items():
-        films = eras.get(label)
-        if films is None:
-            results.check(False, "film era present: %s" % label,
+    # Eras are matched by position: their labels are Wikipedia headings,
+    # which get reworded ("Television films" -> "Television film").
+    labels = list(eras)
+    for index, want in enumerate(FILM_GROUND_TRUTH):
+        if index >= len(labels):
+            results.check(False, "film era #%d present" % (index + 1),
                           "era missing from data.json")
             continue
-        got = len(films)
+        label = labels[index]
+        got = len(eras[label])
         results.check(got >= want, "%s: %d film(s)" % (label, got),
                       "baseline %d -- films missing" % want)
         if got > want:
@@ -244,7 +248,7 @@ def test_films(data, results):
                 "%s: %d films (baseline %d) -- new film; update "
                 "ground_truth.json" % (label, got, want))
 
-    for label in sorted(set(eras) - set(FILM_GROUND_TRUTH)):
+    for label in labels[len(FILM_GROUND_TRUTH):]:
         results.notice("new film era %r (%d films) -- add it to "
                         "ground_truth.json" % (label, len(eras[label])))
 
