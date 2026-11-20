@@ -1,9 +1,5 @@
 <div align="center">
  
- <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Star_Trek_TOS_logo.svg/960px-Star_Trek_TOS_logo.svg.png" title="Star Trek" width="500">
- <br>
- <br>
- 
  # Random Star Trek Media Picker
 
  **Too** much **Star Trek**, **too** little **time**? 
